@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing — Dhira</title>
+  <meta name="description" content="Poems, essays and notes by Dhira — browse by category, search, and read." />
+  <link rel="icon" href="logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index.html">Dhira <span>धीरा</span></a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="nav-links">☰</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="writing.html" class="active">Writing</a></li>
+      <li><a href="wits.html">Wits</a></li>
+      <li><a href="book.html">Books</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="subpage-container">
+    <p class="page-eyebrow">The Writing</p>
+    <h1>Every <em>word.</em></h1>
+    <p class="subpage-intro">Poems, essays and notes — collected in one place. Search for a line, follow a feeling, or simply begin at the top.</p>
+
+    <form class="search-form" id="search-form" role="search">
+      <label class="visually-hidden" for="search-input">Search writing</label>
+      <input type="search" id="search-input" name="q" placeholder="Search by title, line or idea…" autocomplete="off" />
+      <button type="submit" class="search-btn">Search</button>
+    </form>
+
+    <div class="filter-chips" id="category-filters" role="group" aria-label="Filter writing by category"></div>
+  </div>
+
+  <section class="writing-section">
+    <div id="featured-slot"></div>
+    <p class="visually-hidden" id="result-status" role="status" aria-live="polite"></p>
+    <div class="essay-list writing-list" id="writing-list"></div>
+    <div class="pagination" id="writing-pagination" hidden>
+      <button class="page-btn" type="button" id="page-prev">← Newer</button>
+      <span class="pagination-status" id="page-status"></span>
+      <button class="page-btn" type="button" id="page-next">Older →</button>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">Dhira</div>
+    <div class="footer-devanagari">धीरा</div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="js/dhira.js"></script>
+  <script>
+    (function initWriting() {
+      const { api, el, clear, formatDate, excerpt, loading, showState, readingTime, assetUrl } = window.Dhira;
+
+      const listEl = document.getElementById('writing-list');
+      const featuredSlot = document.getElementById('featured-slot');
+      const paginationEl = document.getElementById('writing-pagination');
+      const statusEl = document.getElementById('result-status');
+      const searchForm = document.getElementById('search-form');
+      const searchInput = document.getElementById('search-input');
+      const filtersEl = document.getElementById('category-filters');
+
+      const params = new URLSearchParams(window.location.search);
+      let state = {
+        q: (params.get('q') || '').trim(),
+        category: (params.get('category') || '').trim(),
+        page: Math.max(1, Number.parseInt(params.get('page'), 10) || 1),
+        perPage: 9,
+      };
+      let categories = [];
+      let loadingNow = false;
+
+      searchInput.value = state.q;
+
+      function syncUrl() {
+        const next = new URLSearchParams();
+        if (state.q) next.set('q', state.q);
+        if (state.category) next.set('category', state.category);
+        if (state.page > 1) next.set('page', String(state.page));
+        const query = next.toString();
+        history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
+      }
+
+      function categoryLabel(post) {
+        return post.category ? post.category.name : '';
+      }
+
+      function renderFilters() {
+        clear(filtersEl);
+        const all = el('button', 'chip' + (!state.category ? ' is-active' : ''), 'All writing');
+        all.type = 'button';
+        all.addEventListener('click', () => {
+          state.category = '';
+          state.page = 1;
+          syncUrl();
+          renderFilters();
+          load();
+        });
+        filtersEl.appendChild(all);
+
+        categories.forEach((category) => {
+          const chip = el(
+            'button',
+            'chip' + (state.category === category.slug ? ' is-active' : ''),
+            category.post_count ? `${category.name} (${category.post_count})` : category.name
+          );
+          chip.type = 'button';
+          chip.addEventListener('click', () => {
+            state.category = state.category === category.slug ? '' : category.slug;
+            state.page = 1;
+            syncUrl();
+            renderFilters();
+            load();
+          });
+          filtersEl.appendChild(chip);
+        });
+      }
+
+      function postHref(post) {
+        return `post.html?slug=${encodeURIComponent(post.slug)}`;
+      }
+
+      function makeListRow(post) {
+        const article = el('article', 'essay-item');
+        const row = el('div', 'writing-row');
+        const body = el('div', '');
+
+        const meta = el('div', 'essay-meta');
+        meta.appendChild(el('span', '', formatDate(post.published_on)));
+        meta.appendChild(el('span', 'essay-tag', post.type === 'poem' ? 'Poem' : 'Essay'));
+        if (post.category) meta.appendChild(el('span', 'tag-text', post.category.name));
+        meta.appendChild(el('span', '', readingTime(post.reading_minutes)));
+        body.appendChild(meta);
+
+        const title = el('a', 'essay-title', post.title);
+        title.href = postHref(post);
+        body.appendChild(title);
+
+        if (post.subtitle) body.appendChild(el('p', 'post-subtitle', post.subtitle));
+        body.appendChild(el('p', 'essay-excerpt', post.excerpt || excerpt(post.title, 150)));
+
+        const link = el('a', 'essay-link', post.type === 'poem' ? 'Read poem →' : 'Read piece →');
+        link.href = postHref(post);
+        body.appendChild(link);
+        row.appendChild(body);
+
+        if (post.cover && post.cover.url) {
+          const image = el('img', 'writing-row-media');
+          image.src = assetUrl(post.cover.url);
+          image.alt = post.title;
+          image.loading = 'lazy';
+          row.appendChild(image);
+        }
+
+        article.appendChild(row);
+        return article;
+      }
+
+      function renderFeatured(post) {
+        clear(featuredSlot);
+        if (!post) return;
+
+        const card = el('a', 'featured-writing' + (post.cover && post.cover.url ? '' : ' no-media'));
+        card.href = postHref(post);
+
+        if (post.cover && post.cover.url) {
+          const media = el('div', 'featured-writing-media');
+          const image = el('img');
+          image.src = assetUrl(post.cover.url);
+          image.alt = post.title;
+          media.appendChild(image);
+          card.appendChild(media);
+        }
+
+        const body = el('div', 'featured-writing-body');
+        const label = el('span', 'featured-label', '✦ Featured');
+        body.appendChild(label);
+        body.appendChild(el('div', 'featured-writing-title', post.title));
+        if (post.subtitle) body.appendChild(el('p', 'post-subtitle', post.subtitle));
+        body.appendChild(el('p', 'featured-writing-excerpt', post.excerpt || excerpt(post.title, 180)));
+        body.appendChild(el('span', 'latest-card-link', post.type === 'poem' ? 'Read poem →' : 'Read piece →'));
+        card.appendChild(body);
+        featuredSlot.appendChild(card);
+      }
+
+      function renderPagination(meta) {
+        if (!meta || meta.total_pages <= 1) {
+          paginationEl.hidden = true;
+          return;
+        }
+        paginationEl.hidden = false;
+        document.getElementById('page-status').textContent = `Page ${meta.page} of ${meta.total_pages}`;
+        const prev = document.getElementById('page-prev');
+        const next = document.getElementById('page-next');
+        prev.disabled = !meta.has_prev;
+        next.disabled = !meta.has_next;
+      }
+
+      async function load() {
+        if (loadingNow) return;
+        loadingNow = true;
+
+        clear(featuredSlot);
+        loading(listEl, 'Gathering the words…');
+        paginationEl.hidden = true;
+
+        try {
+          const search = new URLSearchParams({
+            page: String(state.page),
+            per_page: String(state.perPage),
+          });
+          if (state.q) search.set('q', state.q);
+          if (state.category) search.set('category', state.category);
+
+          const data = await api.get(`/posts?${search.toString()}`);
+          clear(listEl);
+
+          const items = data.items || [];
+          const meta = data.pagination;
+          statusEl.textContent = items.length
+            ? `${meta.total} piece${meta.total === 1 ? '' : 's'} found.`
+            : 'No pieces found.';
+
+          if (!state.q && !state.category && state.page === 1) {
+            try {
+              const featured = await api.get('/posts?featured=true&per_page=1');
+              renderFeatured(featured.items && featured.items[0]);
+            } catch { /* featured is optional */ }
+          }
+
+          if (!items.length) {
+            showState(listEl, {
+              title: state.q || state.category ? 'No words found' : 'The page is still blank',
+              message: state.q
+                ? `Nothing matched “${state.q}”. Try a different word or clear the filters.`
+                : 'No writing has been published here yet. Come back soon.',
+              actionLabel: state.q || state.category ? 'Clear filters' : null,
+              onAction: () => {
+                state.q = '';
+                state.category = '';
+                state.page = 1;
+                searchInput.value = '';
+                syncUrl();
+                renderFilters();
+                load();
+              },
+            });
+            renderPagination(meta);
+            return;
+          }
+
+          items.forEach((post) => listEl.appendChild(makeListRow(post)));
+          renderPagination(meta);
+        } catch (error) {
+          clear(listEl);
+          showState(listEl, {
+            error: true,
+            title: 'The writing could not be loaded',
+            message: error.message || 'Please try again in a moment.',
+            actionLabel: 'Try again',
+            onAction: load,
+          });
+        } finally {
+          loadingNow = false;
+        }
+      }
+
+      document.getElementById('page-prev').addEventListener('click', () => {
+        if (state.page <= 1) return;
+        state.page -= 1;
+        syncUrl();
+        load();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      document.getElementById('page-next').addEventListener('click', () => {
+        state.page += 1;
+        syncUrl();
+        load();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      let searchTimer;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          const value = searchInput.value.trim();
+          if (value === state.q) return;
+          state.q = value;
+          state.page = 1;
+          syncUrl();
+          load();
+        }, 350);
+      });
+
+      searchForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        clearTimeout(searchTimer);
+        state.q = searchInput.value.trim();
+        state.page = 1;
+        syncUrl();
+        load();
+      });
+
+      window.addEventListener('popstate', () => {
+        const next = new URLSearchParams(window.location.search);
+        state = {
+          q: (next.get('q') || '').trim(),
+          category: (next.get('category') || '').trim(),
+          page: Math.max(1, Number.parseInt(next.get('page'), 10) || 1),
+          perPage: 9,
+        };
+        searchInput.value = state.q;
+        renderFilters();
+        load();
+      });
+
+      api.get('/categories').then(({ items }) => {
+        categories = items || [];
+        renderFilters();
+      }).catch(() => {
+        renderFilters();
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

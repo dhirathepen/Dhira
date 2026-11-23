@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About — Dhira</title>
+  <meta name="description" content="About Mohith, the writer behind the pen name Dhira. Wits and essays." />
+  <link rel="icon" href="logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index.html">Dhira <span>धीरा</span></a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="nav-links">☰</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="writing.html">Writing</a></li>
+      <li><a href="wits.html">Wits</a></li>
+      <li><a href="book.html">Books</a></li>
+      <li><a href="about.html" class="active">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="subpage-container">
+    <p class="page-eyebrow">About</p>
+    <h1>The person <em>behind the name.</em></h1>
+    <p class="subpage-intro">A little about who is writing, what draws them to the page, and the life that happens around the words.</p>
+  </div>
+
+  <section class="about-section">
+    <div id="about-root">
+      <div class="loading-state" role="status" aria-live="polite">
+        <span class="loading-dot"></span><span>Turning the page…</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">Dhira</div>
+    <div class="footer-devanagari">धीरा</div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="js/dhira.js"></script>
+  <script>
+    (function initAbout() {
+      const { api, el, clear, assetUrl, renderContent, showState } = window.Dhira;
+
+      const root = document.getElementById('about-root');
+
+      const SOCIAL_LABELS = {
+        website: 'Website',
+        instagram: 'Instagram',
+        x: 'X (Twitter)',
+        facebook: 'Facebook',
+        goodreads: 'Goodreads',
+        linkedin: 'LinkedIn',
+        youtube: 'YouTube',
+        newsletter: 'Newsletter',
+      };
+
+      const FALLBACK = {
+        name: 'Mohith',
+        pen_name: 'Dhira',
+        tagline: 'A jack of all trades, exploring everything.',
+        introduction:
+          "I'm Mohith, writing under the pen name Dhira. I enjoy exploring new ideas, learning new skills, and taking on challenges — just for fun.",
+        biography:
+          'I am firmly committed to the philosophy of being a jack of all trades, master of none — but often better than a master of one. My curiosity often leads me to different fields and interests, giving me the opportunity to learn from a wide range of experiences. Writing is always one of them.',
+        writing_interests: 'Essays · Poetry · Observation',
+        personal_description: '',
+        location: '',
+        public_email: 'dhirathepen@gmail.com',
+        profile_image: { url: 'profile.jpg' },
+        social_links: {},
+      };
+
+      function interestsList(value) {
+        return String(value || '')
+          .split(/[·,|]/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .slice(0, 12);
+      }
+
+      function makeSocialLinks(links) {
+        const entries = Object.entries(links || {}).filter(([key, value]) => {
+          if (!value || typeof value !== 'string') return false;
+          if (!SOCIAL_LABELS[key]) return false;
+          return /^https?:\/\//i.test(value.trim());
+        });
+        if (!entries.length) return null;
+
+        const wrap = el('div', 'social-links');
+        entries.forEach(([key, value]) => {
+          const link = el('a', 'social-link');
+          link.href = value.trim();
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.appendChild(el('span', '', SOCIAL_LABELS[key]));
+          link.appendChild(el('span', 'social-arrow', '↗'));
+          wrap.appendChild(link);
+        });
+        return wrap;
+      }
+
+      function makeBlock(label, text) {
+        if (!text) return null;
+        const block = el('div', 'about-block');
+        block.appendChild(el('p', 'about-block-label', label));
+        const body = el('div', 'about-block-text');
+        renderContent(body, text);
+        block.appendChild(body);
+        return block;
+      }
+
+      function render(author) {
+        clear(root);
+
+        const grid = el('div', 'about-grid');
+
+        const photoWrap = el('div', 'about-photo-wrap');
+        const photo = el('img', 'about-photo');
+        photo.src = author.profile_image && author.profile_image.url
+          ? assetUrl(author.profile_image.url)
+          : 'profile.jpg';
+        photo.alt = author.name ? `Portrait of ${author.name}` : 'Author portrait';
+        photo.addEventListener('error', () => { photo.src = 'profile.jpg'; }, { once: true });
+        photoWrap.appendChild(photo);
+        grid.appendChild(photoWrap);
+
+        const copy = el('div', 'about-copy');
+
+        copy.appendChild(el('h2', 'about-name', author.name || 'Mohith'));
+        const penParts = [author.pen_name ? `Writing as ${author.pen_name}` : '', 'Author'].filter(Boolean);
+        if (penParts.length) copy.appendChild(el('p', 'about-pen', penParts.join(' · ')));
+        if (author.tagline) copy.appendChild(el('p', 'about-tagline', author.tagline));
+
+        if (author.introduction) {
+          const intro = el('div', 'about-intro');
+          renderContent(intro, author.introduction);
+          copy.appendChild(intro);
+        }
+
+        const biography = makeBlock('Biography', author.biography);
+        if (biography) copy.appendChild(biography);
+
+        const personal = makeBlock('Beyond the page', author.personal_description);
+        if (personal) copy.appendChild(personal);
+
+        const interests = interestsList(author.writing_interests);
+        if (interests.length) {
+          const block = el('div', 'about-block');
+          block.appendChild(el('p', 'about-block-label', 'Interests'));
+          const wrap = el('div', 'about-interests');
+          interests.forEach((interest) => wrap.appendChild(el('span', '', interest)));
+          block.appendChild(wrap);
+          copy.appendChild(block);
+        }
+
+        const socials = makeSocialLinks(author.social_links);
+        if (socials) {
+          const block = el('div', 'about-block');
+          block.appendChild(el('p', 'about-block-label', 'Elsewhere'));
+          block.appendChild(socials);
+          copy.appendChild(block);
+        }
+
+        const contact = el('div', 'about-block');
+        contact.appendChild(el('p', 'about-block-label', 'Say hello'));
+        const line = el('p', 'about-contact-line');
+        if (author.public_email) {
+          line.appendChild(document.createTextNode('The surest way to reach me is by email: '));
+          const mail = el('a', '', author.public_email);
+          mail.href = `mailto:${author.public_email}`;
+          line.appendChild(mail);
+          line.appendChild(document.createTextNode('.'));
+        } else {
+          line.appendChild(document.createTextNode('The surest way to reach me is through the contact page.'));
+        }
+        contact.appendChild(line);
+
+        const contactLink = el('a', 'essay-link', 'Write me a message →');
+        contactLink.href = 'contact.html';
+        contactLink.style.display = 'inline-block';
+        contactLink.style.marginTop = '0.8rem';
+        contact.appendChild(contactLink);
+
+        if (author.location) contact.appendChild(el('p', 'about-location', `Based in ${author.location}.`));
+        copy.appendChild(contact);
+
+        grid.appendChild(copy);
+        root.appendChild(grid);
+      }
+
+      async function load() {
+        try {
+          const data = await api.get('/author');
+          const author = data && data.author ? data.author : FALLBACK;
+          render({ ...FALLBACK, ...author, social_links: author.social_links || {} });
+        } catch (error) {
+          if (error.status === 0 || error.status >= 500) {
+            render(FALLBACK);
+          } else {
+            clear(root);
+            showState(root, {
+              error: true,
+              title: 'The page could not be loaded',
+              message: error.message || 'Please try again in a moment.',
+              actionLabel: 'Try again',
+              onAction: load,
+            });
+          }
+        }
+      }
+
+      load();
+    })();
+  </script>
+</body>
+</html>

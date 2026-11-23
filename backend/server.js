@@ -1,106 +1,61 @@
-/**
- * Dhira CMS — server.js
- * Node.js + Express + MongoDB Atlas backend
- */
-
 'use strict';
 
-const express    = require('express');
-const mongoose   = require('mongoose');
-const cors       = require('cors');
-const helmet     = require('helmet');
-const rateLimit  = require('express-rate-limit');
-require('dotenv').config();
+const app = require('./app');
+const db = require('./db');
+const config = require('./config');
+const { ensureDefaults } = require('./lib/bootstrap');
+const { deleteExpiredSessions } = require('./lib/session');
 
-const authRoutes  = require('./routes/auth');
-const postRoutes  = require('./routes/posts');
+async function start() {
+  await db.raw('select 1');
+  console.log(`✓ SQLite connected (${config.databaseFile})`);
 
-const app  = express();
-const PORT = process.env.PORT || 4000;
+  if (config.runMigrations) {
+    const [, applied] = await db.migrate.latest();
+    if (applied.length) {
+      console.log(`✓ Applied ${applied.length} database migration(s)`);
+    } else {
+      console.log('✓ Database schema is up to date');
+    }
+  }
 
-// ── Security headers ────────────────────────────────────────────────────────
-app.use(helmet());
+  await ensureDefaults();
+  await deleteExpiredSessions();
 
-// ── CORS ────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map(o => o.trim())
-  .filter(Boolean);
+  // Housekeeping: drop expired sessions once an hour.
+  const cleanup = setInterval(() => {
+    deleteExpiredSessions().catch((err) => console.error('[session cleanup]', err.message));
+  }, 60 * 60 * 1000);
+  cleanup.unref();
 
-app.use(cors({
-  origin: (origin, cb) => {
-    // Allow requests with no origin (Postman, curl, same-origin)
-    if (!origin) return cb(null, true);
-    if (allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS policy: origin "${origin}" not allowed`));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-
-app.options('*', cors()); // Pre-flight for all routes
-
-// ── Body parsing ────────────────────────────────────────────────────────────
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// ── Rate limiting ────────────────────────────────────────────────────────────
-// Strict limit on auth endpoint
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many login attempts. Try again in 15 minutes.' },
-});
-
-// General API limiter
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use('/api/auth', authLimiter);
-app.use('/api', apiLimiter);
-
-// ── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth',  authRoutes);
-app.use('/api/posts', postRoutes);
-
-// ── Health check ────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
-});
-
-// ── 404 ──────────────────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
-// ── Global error handler ─────────────────────────────────────────────────────
-app.use((err, req, res, next) => {
-  console.error('[ERROR]', err.message);
-  const status = err.status || 500;
-  res.status(status).json({ error: err.message || 'Internal server error' });
-});
-
-// ── Connect to MongoDB & start server ────────────────────────────────────────
-mongoose
-  .connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 10000,
-  })
-  .then(() => {
-    console.log('✓ MongoDB connected');
-    app.listen(PORT, () => {
-      console.log(`✓ Dhira backend running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('✗ MongoDB connection failed:', err.message);
-    process.exit(1);
+  const server = app.listen(config.port, () => {
+    console.log(`✓ Dhira is running at http://localhost:${config.port}`);
+    console.log(`  Admin: http://localhost:${config.port}/admin`);
   });
 
-module.exports = app;
+  server.on('error', (err) => {
+    console.error('✗ Server error:', err.message);
+  });
+
+  const shutdown = (signal) => {
+    console.log(`\n${signal} received — closing server…`);
+    server.close(async () => {
+      try {
+        await db.destroy();
+      } finally {
+        process.exit(0);
+      }
+    });
+    setTimeout(() => process.exit(1), 10000).unref();
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+}
+
+start().catch(async (err) => {
+  console.error('✗ Failed to start:', err.message);
+  if (config.env !== 'production' && err.stack) console.error(err.stack);
+  await db.destroy().catch(() => {});
+  process.exit(1);
+});

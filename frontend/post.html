@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reading — Dhira</title>
+  <meta name="description" content="A poem or essay by Dhira." />
+  <link rel="icon" href="logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index.html">Dhira <span>धीरा</span></a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="nav-links">☰</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="writing.html" class="active">Writing</a></li>
+      <li><a href="wits.html">Wits</a></li>
+      <li><a href="book.html">Books</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+
+  <main class="blog-reader post-reader">
+    <a class="blog-reader-back" href="writing.html" id="post-back">← All writing</a>
+    <div id="post-root">
+      <div class="loading-state" role="status" aria-live="polite">
+        <span class="loading-dot"></span><span>Opening the page…</span>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-logo">Dhira</div>
+    <div class="footer-devanagari">धीरा</div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="js/dhira.js"></script>
+  <script>
+    (function initPost() {
+      const { api, el, clear, formatDate, assetUrl, readingTime, renderContent, showState } = window.Dhira;
+
+      const root = document.getElementById('post-root');
+      const back = document.getElementById('post-back');
+      const slug = (new URLSearchParams(window.location.search).get('slug') || '').trim();
+
+      function categoryHref(post) {
+        return post.category ? `writing.html?category=${encodeURIComponent(post.category.slug)}` : 'writing.html';
+      }
+
+      function makeMeta(post) {
+        const meta = el('div', 'blog-reader-meta post-meta');
+        meta.appendChild(el('span', '', formatDate(post.published_on)));
+        meta.appendChild(el('span', 'essay-tag', post.type === 'poem' ? 'Poem' : 'Essay'));
+        if (post.category) {
+          const category = el('a', 'tag-text', post.category.name);
+          category.href = categoryHref(post);
+          category.style.textDecoration = 'none';
+          meta.appendChild(category);
+        }
+        meta.appendChild(el('span', '', readingTime(post.reading_minutes)));
+        return meta;
+      }
+
+      function makeBody(post) {
+        const body = el('div', 'post-body' + (post.type === 'poem' ? ' is-poem' : ''));
+        renderContent(body, post.content);
+        return body;
+      }
+
+      function makeFooterNote(post) {
+        if (!post.footer_note || !post.footer_note.trim()) return null;
+        const wrap = el('div', 'post-footer-note');
+        renderContent(wrap, post.footer_note.trim());
+        return wrap;
+      }
+
+      function makeTags(post) {
+        if (!post.tags || !post.tags.length) return null;
+        const wrap = el('div', 'post-tags');
+        wrap.setAttribute('aria-label', 'Tags');
+        post.tags.forEach((tag) => {
+          const link = el('a', 'post-tag', tag.name);
+          link.href = `writing.html?tag=${encodeURIComponent(tag.slug)}`;
+          wrap.appendChild(link);
+        });
+        return wrap;
+      }
+
+      function makePostNav(newer, older) {
+        if (!newer && !older) return null;
+        const nav = el('nav', 'post-nav');
+        nav.setAttribute('aria-label', 'More writing');
+
+        if (newer) {
+          const link = el('a');
+          link.href = `post.html?slug=${encodeURIComponent(newer.slug)}`;
+          link.appendChild(el('span', 'post-nav-label', '← Newer'));
+          link.appendChild(el('span', 'post-nav-title', newer.title));
+          nav.appendChild(link);
+        } else {
+          nav.appendChild(el('span', 'post-nav-spacer'));
+        }
+
+        if (older) {
+          const link = el('a', 'is-next');
+          link.href = `post.html?slug=${encodeURIComponent(older.slug)}`;
+          link.appendChild(el('span', 'post-nav-label', 'Older →'));
+          link.appendChild(el('span', 'post-nav-title', older.title));
+          nav.appendChild(link);
+        }
+
+        return nav;
+      }
+
+      function renderPost(post, newer, older) {
+        clear(root);
+
+        const article = el('article', 'post-article');
+        article.appendChild(makeMeta(post));
+
+        const title = el('h1', 'post-title', post.title);
+        article.appendChild(title);
+
+        if (post.subtitle) article.appendChild(el('p', 'post-subtitle', post.subtitle));
+
+        if (post.cover && post.cover.url) {
+          const cover = el('img', 'post-cover');
+          cover.src = assetUrl(post.cover.url);
+          cover.alt = post.title;
+          article.appendChild(cover);
+        }
+
+        article.appendChild(makeBody(post));
+
+        const footerNote = makeFooterNote(post);
+        if (footerNote) article.appendChild(footerNote);
+
+        const tags = makeTags(post);
+        if (tags) article.appendChild(tags);
+
+        const nav = makePostNav(newer, older);
+        if (nav) article.appendChild(nav);
+
+        root.appendChild(article);
+
+        document.title = `${post.title} — Dhira`;
+        const description = post.excerpt || post.subtitle || '';
+        if (description) {
+          const meta = document.querySelector('meta[name="description"]');
+          if (meta) meta.setAttribute('content', description.slice(0, 180));
+        }
+      }
+
+      function renderNotFound(message) {
+        clear(root);
+        back.hidden = true;
+        showState(root, {
+          error: true,
+          title: 'This page is missing',
+          message: message || 'That piece could not be found. It may have been moved, or it has not been published yet.',
+          actionLabel: 'Browse all writing',
+          onAction: () => { window.location.href = 'writing.html'; },
+        });
+        document.title = 'Not found — Dhira';
+      }
+
+      async function load() {
+        if (!slug) {
+          renderNotFound('No piece was chosen. Pick something from the writing index.');
+          return;
+        }
+
+        try {
+          const data = await api.get(`/posts/${encodeURIComponent(slug)}`);
+          if (!data || !data.post) {
+            renderNotFound();
+            return;
+          }
+          renderPost(data.post, data.newer, data.older);
+        } catch (error) {
+          if (error.status === 404) {
+            renderNotFound();
+          } else {
+            clear(root);
+            showState(root, {
+              error: true,
+              title: 'The piece could not be loaded',
+              message: error.message || 'Please try again in a moment.',
+              actionLabel: 'Try again',
+              onAction: load,
+            });
+          }
+        }
+      }
+
+      load();
+    })();
+  </script>
+</body>
+</html>

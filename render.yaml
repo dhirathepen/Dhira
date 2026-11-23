@@ -3,22 +3,22 @@ services:
     name: dhira-backend
     runtime: node
     rootDir: backend
-    plan: free
+    # SQLite lives in a file, so a persistent disk is required. Disks are not
+    # available on the free plan; use Starter or above.
+    plan: starter
     buildCommand: npm install
     startCommand: node server.js
     autoDeploy: true
+    disk:
+      name: dhira-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
-      - key: MONGODB_URI
-        sync: false
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_EXPIRES_IN
-        value: 7d
+      - key: DATABASE_FILE
+        value: /data/dhira.sqlite
       - key: ALLOWED_ORIGINS
         sync: false
-      - key: ADMIN_USERNAME
-        value: admin
-      - key: ADMIN_PASSWORD
-        sync: false
+      - key: IMAGE_MAX_MB
+        value: "8"

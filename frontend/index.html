@@ -4,35 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dhira — धीरा</title>
-  <meta name="description" content="Mohith, writing under the pen name Dhira. Exploring ideas, skills, and challenges — just for fun." />
+  <meta name="description" content="Mohith, writing under the pen name Dhira. Wits, essays and notes — just for the love of it." />
   <link rel="icon" href="logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app.css" />
   <style>
-    .splash-screen {
-      position: fixed; top:0; left:0; width:100%; height:100%;
-      background:var(--off-white); z-index:9999;
-      display:flex; flex-direction:column; justify-content:center; align-items:center;
-      transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), visibility 0.8s;
-    }
-    .splash-screen.fade-out { opacity:0; visibility:hidden; pointer-events:none; }
-    .splash-logo-img {
-      width:180px; height:auto; margin-bottom:2.5rem;
-      mix-blend-mode:multiply;
-      opacity:0; transform:translateY(15px);
-      animation: splashLogoFadeIn 1.2s cubic-bezier(0.16,1,0.3,1) forwards;
-    }
-    .splash-timer {
-      font-family:'Cormorant Garamond',serif; font-size:6rem; font-weight:300;
-      color:var(--sage); line-height:1; height:6rem;
-      display:flex; justify-content:center; align-items:center;
-      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.4s;
-    }
-    .splash-timer.tick { transform:scale(0.8); opacity:0; }
-    @keyframes splashLogoFadeIn { to { opacity:1; transform:translateY(0); } }
-
     .hero { padding:160px 4rem 100px; max-width:1120px; position:relative; overflow:hidden; margin:0 auto; }
     .hero-container { display:flex; gap:5rem; align-items:center; justify-content:space-between; position:relative; z-index:2; }
     .hero-text-content { flex:1.2; max-width:600px; }
@@ -57,13 +36,13 @@
     .hero-eyebrow { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--sage); font-weight:500; margin-bottom:1.4rem; }
     .hero h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(2.8rem,5.5vw,4.8rem); font-weight:300; line-height:1.12; color:var(--charcoal); margin-bottom:2rem; }
     .hero h1 em { font-style:italic; color:var(--sage); }
-    .hero-bio p { font-size:1rem; color:var(--mid-grey); font-weight:300; line-height:1.9; margin-bottom:1rem; }
+    .hero-bio p { font-size:1rem; color:var(--mid-grey); font-weight:300; line-height:1.9; margin-bottom:1rem; white-space:pre-wrap; }
     .hero-bio strong { color:var(--charcoal); font-weight:500; }
     .hero-bio em { font-style:italic; color:var(--sage); }
 
     .categories { padding:80px 4rem; }
     .section-label { font-size:0.7rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--light-grey); font-weight:500; margin-bottom:3rem; }
-    .categories-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+    .categories-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:2px; }
     .category-card {
       background:var(--white); border:1px solid var(--stone); padding:2.8rem 2.4rem;
       text-decoration:none; color:inherit;
@@ -82,6 +61,8 @@
     .category-desc   { font-size:0.82rem; color:var(--mid-grey); line-height:1.7; font-weight:300; }
     .category-arrow  { margin-top:2rem; font-size:0.72rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--sage); }
 
+    .latest-heading { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:400; color:var(--charcoal); }
+
     @media (max-width:900px) {
       .hero { padding:120px 1.5rem 70px; max-width:100%; }
       .hero-container { flex-direction:column-reverse; gap:3rem; align-items:center; }
@@ -89,22 +70,20 @@
       .hero-devanagari { font-size:6rem; right:0; top:100px; }
       .categories { padding:60px 1.5rem; }
       .categories-grid { grid-template-columns:1fr; gap:1px; }
+      .section-label { margin-bottom:2rem; }
     }
   </style>
 </head>
 <body>
-  <div class="splash-screen" id="splash-screen">
-    <img src="logo.png" alt="Dhira Logo" class="splash-logo-img" />
-    <div class="splash-timer" id="splash-timer">3</div>
-  </div>
-
   <nav>
     <a class="nav-logo" href="index.html">Dhira <span>धीरा</span></a>
-    <ul class="nav-links">
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="nav-links">☰</button>
+    <ul class="nav-links" id="nav-links">
       <li><a href="index.html" class="active">Home</a></li>
-      <li><a href="personal.html">Personal</a></li>
-      <li><a href="thoughts.html">Thoughts</a></li>
-      <li><a href="book.html">The Book</a></li>
+      <li><a href="writing.html">Writing</a></li>
+      <li><a href="wits.html">Wits</a></li>
+      <li><a href="book.html">Books</a></li>
+      <li><a href="about.html">About</a></li>
       <li><a href="contact.html">Contact</a></li>
     </ul>
   </nav>
@@ -113,16 +92,16 @@
     <div class="hero-devanagari">धीरा</div>
     <div class="hero-container">
       <div class="hero-text-content">
-        <p class="hero-eyebrow">Mohith · Dhira</p>
+        <p class="hero-eyebrow" id="hero-eyebrow">Mohith · Dhira</p>
         <h1>A jack of all trades,<br><em>exploring everything.</em></h1>
-        <div class="hero-bio">
+        <div class="hero-bio" id="hero-bio">
           <p>I'm <strong>Mohith</strong>, writing under the pen name <strong>Dhira</strong>. I enjoy exploring new ideas, learning new skills, and taking on challenges — just for fun.</p>
           <p>I am firmly committed to the philosophy of being a <strong>jack of all trades, master of none — but often better than a master of one.</strong></p>
           <p>My curiosity often leads me to different fields and interests, giving me the opportunity to learn from a wide range of experiences. And writing is always one of them.</p>
         </div>
       </div>
       <div class="hero-image-wrapper">
-        <img src="profile.jpg" alt="Mohith" class="hero-image" />
+        <img src="profile.jpg" alt="Mohith" class="hero-image" id="hero-image" />
       </div>
     </div>
   </section>
@@ -132,25 +111,30 @@
   <section class="categories">
     <p class="section-label">Explore the writing</p>
     <div class="categories-grid">
-      <a class="category-card" href="personal.html">
+      <a class="category-card" href="wits.html">
         <div class="category-number">01</div>
-        <div class="category-title">Personal</div>
-        <p class="category-desc">Essays on lived experience, quiet observations, and the texture of everyday days.</p>
-        <p class="category-arrow">Read essays →</p>
-      </a>
-      <a class="category-card" href="thoughts.html">
-        <div class="category-number">02</div>
-        <div class="category-title">Thoughts</div>
-        <p class="category-desc">Unfinished ideas, sudden questions, and things that arrive without invitation.</p>
-        <p class="category-arrow">Browse thoughts →</p>
+        <div class="category-title">Wits</div>
+        <p class="category-desc">Anything and everything — essays, reflections, fragments, and pieces that refuse to sit still.</p>
+        <p class="category-arrow">Read the wits →</p>
       </a>
       <a class="category-card" href="book.html">
-        <div class="category-number">03</div>
-        <div class="category-title">The Book</div>
-        <p class="category-desc">Notes from inside a work in progress — the writing, the doubt, the discoveries.</p>
-        <p class="category-arrow">Follow the journey →</p>
+        <div class="category-number">02</div>
+        <div class="category-title">Books</div>
+        <p class="category-desc">Works in progress and finished titles — the writing, the doubt, the discoveries.</p>
+        <p class="category-arrow">Open the library →</p>
       </a>
     </div>
+  </section>
+
+  <section class="latest-writing" id="latest-writing" hidden>
+    <div class="latest-writing-head">
+      <div>
+        <p class="section-label" style="margin-bottom:0.5rem;">Recent writing</p>
+        <h2 class="latest-heading">From the desk</h2>
+      </div>
+      <a class="essay-link" href="writing.html">All writing →</a>
+    </div>
+    <div class="latest-writing-grid" id="latest-writing-grid"></div>
   </section>
 
   <footer>
@@ -158,20 +142,55 @@
     <div class="footer-devanagari">धीरा</div>
   </footer>
 
+  <script src="config.js"></script>
+  <script src="js/dhira.js"></script>
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const timerEl  = document.getElementById('splash-timer');
-      const splashEl = document.getElementById('splash-screen');
-      let count = 3;
-      const interval = setInterval(() => {
-        timerEl.classList.add('tick');
-        setTimeout(() => {
-          count--;
-          if (count > 0) { timerEl.textContent = count; timerEl.classList.remove('tick'); }
-          else { clearInterval(interval); splashEl.classList.add('fade-out'); }
-        }, 400);
-      }, 1000);
-    });
+    (function loadHome() {
+      const { api, assetUrl, el, clear, renderContent, formatDate, excerpt } = window.Dhira;
+
+      // Author details — fall back silently to the text already on the page.
+      api.get('/author').then(({ author }) => {
+        if (!author) return;
+        const eyebrow = document.getElementById('hero-eyebrow');
+        const nameParts = [author.name, author.pen_name].filter(Boolean);
+        if (nameParts.length) eyebrow.textContent = nameParts.join(' · ');
+
+        if (author.introduction || author.biography) {
+          const text = [author.introduction, author.biography].filter(Boolean).join('\n\n');
+          renderContent(document.getElementById('hero-bio'), text);
+        }
+        if (author.profile_image) {
+          const image = document.getElementById('hero-image');
+          image.src = assetUrl(author.profile_image.url);
+          image.alt = author.name || 'Author portrait';
+        }
+      }).catch(() => {});
+
+      // Recent writing
+      api.get('/posts?per_page=6').then(({ items }) => {
+        if (!items || !items.length) return;
+        const sorted = [...items].sort((a, b) => Number(b.featured) - Number(a.featured));
+        const cards = sorted.slice(0, 3).map((post) => {
+          const link = el('a', 'latest-card');
+          link.href = `post.html?slug=${encodeURIComponent(post.slug)}`;
+
+          const meta = el('div', 'latest-card-meta');
+          meta.appendChild(el('span', '', 'Wit'));
+          if (post.category) meta.appendChild(el('span', '', post.category.name));
+          meta.appendChild(el('span', '', formatDate(post.published_on, 'short')));
+          link.appendChild(meta);
+
+          link.appendChild(el('div', 'latest-card-title', post.title));
+          link.appendChild(el('p', 'latest-card-excerpt', post.excerpt || excerpt(post.title, 150)));
+          link.appendChild(el('span', 'latest-card-link', 'Read piece →'));
+          return link;
+        });
+
+        const grid = clear(document.getElementById('latest-writing-grid'));
+        cards.forEach((card) => grid.appendChild(card));
+        document.getElementById('latest-writing').hidden = false;
+      }).catch(() => {});
+    })();
   </script>
 </body>
 </html>

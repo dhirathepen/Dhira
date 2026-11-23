@@ -1,99 +1,151 @@
-/**
- * routes/auth.js
- * POST /api/auth/login
- * PUT  /api/auth/credentials  (protected)
- */
-
 'use strict';
 
-const express    = require('express');
-const jwt        = require('jsonwebtoken');
-const Admin      = require('../models/Admin');
-const requireAuth = require('../middleware/auth');
+const express = require('express');
+const db = require('../db');
+const { asyncHandler } = require('../lib/errors');
+const { parse } = require('../lib/validate');
+const { loginSchema, passwordChangeSchema } = require('../lib/schemas');
+const { verifyPassword, burnPasswordCheck, hashPassword } = require('../lib/password');
+const {
+  createSession,
+  revokeSession,
+  revokeAllSessions,
+} = require('../lib/session');
+const requireAdmin = require('../middleware/requireAdmin');
+const { authLimiter } = require('../middleware/rateLimit');
+const { toDbTimestamp, fromDbTimestamp } = require('../lib/dates');
 
 const router = express.Router();
 
+const GENERIC_LOGIN_ERROR = 'Invalid username or password.';
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCK_MINUTES = 15;
+
 // ── POST /api/auth/login ─────────────────────────────────────────────────────
-router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
+router.post(
+  '/login',
+  authLimiter,
+  asyncHandler(async (req, res) => {
+    const { username, password } = parse(loginSchema, req.body);
+    const normalized = username.toLowerCase();
 
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required.' });
-    }
+    const admin = await db('admins').where({ username: normalized }).first();
 
-    // Find admin — explicitly select password (it's hidden by default)
-    const admin = await Admin.findOne({ username: username.trim().toLowerCase() }).select('+password');
     if (!admin) {
-      return res.status(401).json({ error: 'Invalid username or password.' });
+      await burnPasswordCheck(password);
+      return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
     }
 
-    const match = await admin.comparePassword(password);
-    if (!match) {
-      return res.status(401).json({ error: 'Invalid username or password.' });
+    if (admin.locked_until && fromDbTimestamp(admin.locked_until).getTime() > Date.now()) {
+      return res.status(429).json({
+        error: `Too many failed attempts. Please try again in ${LOCK_MINUTES} minutes.`,
+      });
     }
 
-    const token = jwt.sign(
-      { id: admin._id, username: admin.username },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    const valid = await verifyPassword(password, admin.password_hash);
 
-    res.json({
-      token,
-      admin: { id: admin._id, username: admin.username },
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    });
-  } catch (err) {
-    console.error('[Auth/login]', err);
-    res.status(500).json({ error: 'Server error during login.' });
-  }
-});
+    if (!valid) {
+      const attempts = admin.failed_attempts + 1;
+      const shouldLock = attempts >= MAX_FAILED_ATTEMPTS;
+      await db('admins')
+        .where({ id: admin.id })
+        .update({
+          failed_attempts: shouldLock ? 0 : attempts,
+          locked_until: shouldLock
+            ? toDbTimestamp(new Date(Date.now() + LOCK_MINUTES * 60 * 1000))
+            : null,
+          updated_at: db.fn.now(),
+        });
 
-// ── PUT /api/auth/credentials (protected) ───────────────────────────────────
-// Change username and/or password
-router.put('/credentials', requireAuth, async (req, res) => {
-  try {
-    const { username, password, currentPassword } = req.body;
-
-    if (!currentPassword) {
-      return res.status(400).json({ error: 'Current password is required to update credentials.' });
-    }
-
-    const admin = await Admin.findById(req.admin.id).select('+password');
-    if (!admin) return res.status(404).json({ error: 'Admin not found.' });
-
-    const match = await admin.comparePassword(currentPassword);
-    if (!match) return res.status(401).json({ error: 'Current password is incorrect.' });
-
-    if (username) admin.username = username.trim().toLowerCase();
-    if (password) {
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+      if (shouldLock) {
+        return res.status(429).json({
+          error: `Too many failed attempts. Please try again in ${LOCK_MINUTES} minutes.`,
+        });
       }
-      admin.password = password; // pre-save hook will hash it
+      return res.status(401).json({ error: GENERIC_LOGIN_ERROR });
     }
 
-    await admin.save();
+    await db('admins')
+      .where({ id: admin.id })
+      .update({
+        failed_attempts: 0,
+        locked_until: null,
+        last_login_at: db.fn.now(),
+        updated_at: db.fn.now(),
+      });
 
-    // Issue fresh token with possibly new username
-    const token = jwt.sign(
-      { id: admin._id, username: admin.username },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    // Issue a brand-new session id on every login (prevents session fixation).
+    if (req.authSessionId) {
+      await db('sessions').where({ id: req.authSessionId }).del();
+    }
+    await createSession(admin.id, req, res);
+
+    return res.json({ admin: { id: admin.id, username: admin.username } });
+  })
+);
+
+// ── POST /api/auth/logout ────────────────────────────────────────────────────
+router.post(
+  '/logout',
+  asyncHandler(async (req, res) => {
+    await revokeSession(req, res);
+    res.json({ message: 'Signed out.' });
+  })
+);
+
+// ── GET /api/auth/me ─────────────────────────────────────────────────────────
+router.get(
+  '/me',
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    res.json({
+      admin: {
+        id: req.admin.id,
+        username: req.admin.username,
+        last_login_at: req.admin.last_login_at,
+      },
+    });
+  })
+);
+
+// ── POST /api/auth/password ──────────────────────────────────────────────────
+router.post(
+  '/password',
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { current_password: currentPassword, new_password: newPassword } = parse(
+      passwordChangeSchema,
+      req.body
     );
 
-    res.json({ message: 'Credentials updated.', token, admin: { username: admin.username } });
-  } catch (err) {
-    console.error('[Auth/credentials]', err);
-    res.status(500).json({ error: 'Server error while updating credentials.' });
-  }
-});
+    const admin = await db('admins').where({ id: req.admin.id }).first();
+    if (!admin) return res.status(401).json({ error: 'Please sign in again.' });
 
-// ── GET /api/auth/verify (protected) ────────────────────────────────────────
-// Client calls this on load to check if stored token is still valid
-router.get('/verify', requireAuth, (req, res) => {
-  res.json({ valid: true, admin: req.admin });
-});
+    const valid = await verifyPassword(currentPassword, admin.password_hash);
+    if (!valid) {
+      return res.status(400).json({
+        error: 'Your current password is incorrect.',
+        fields: { current_password: 'Your current password is incorrect.' },
+      });
+    }
+
+    if (await verifyPassword(newPassword, admin.password_hash)) {
+      return res.status(400).json({
+        error: 'Choose a password you have not used before.',
+        fields: { new_password: 'Choose a password you have not used before.' },
+      });
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    await db('admins')
+      .where({ id: admin.id })
+      .update({ password_hash: passwordHash, updated_at: db.fn.now() });
+
+    // Sign out every other device, keep the current session.
+    await revokeAllSessions(admin.id, req.authSessionId);
+
+    res.json({ message: 'Password updated. Other sessions have been signed out.' });
+  })
+);
 
 module.exports = router;

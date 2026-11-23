@@ -1,14 +1,25 @@
-# Dependencies
+# ── Dependencies
 node_modules/
 
-# Environment — NEVER commit this
+# ── Environment — never commit real secrets
 .env
 backend/.env
+*.env.local
 
-# OS files
+# ── Backups
+backups/
+*.dump
+
+# ── Local SQLite database (including WAL sidecars)
+backend/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# ── OS files
 .DS_Store
 Thumbs.db
 
-# Logs
+# ── Logs
 *.log
 npm-debug.log*

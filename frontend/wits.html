@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wits — Dhira</title>
+  <meta name="description" content="Wits by Dhira — anything and everything, with no boundaries between forms." />
+  <link rel="icon" href="logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <nav>
+    <a class="nav-logo" href="index.html">Dhira <span>धीरा</span></a>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="nav-links">☰</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="writing.html">Writing</a></li>
+      <li><a href="wits.html" class="active">Wits</a></li>
+      <li><a href="book.html">Books</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="subpage-container">
+    <p class="page-eyebrow">Anything &amp; Everything</p>
+    <h1><em>Wits.</em></h1>
+    <p class="subpage-intro">A place for whatever is worth writing down. No categories, no boundaries, just the words.</p>
+  </div>
+
+  <p class="visually-hidden" id="result-status" role="status" aria-live="polite"></p>
+  <div class="essay-list has-pagination" id="essay-list"></div>
+
+  <div class="pagination list-pagination" id="pagination" hidden>
+    <button class="page-btn" type="button" id="page-prev">← Newer</button>
+    <span class="pagination-status" id="page-status"></span>
+    <button class="page-btn" type="button" id="page-next">Older →</button>
+  </div>
+
+  <footer>
+    <div class="footer-logo">Dhira</div>
+    <div class="footer-devanagari">धीरा</div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="js/dhira.js"></script>
+  <script>
+    (function initWits() {
+      const { api, el, clear, formatDate, excerpt, readingTime, assetUrl, loading, showState } = window.Dhira;
+
+      const listEl = document.getElementById('essay-list');
+      const paginationEl = document.getElementById('pagination');
+      const statusEl = document.getElementById('result-status');
+      const perPage = 9;
+      let page = Math.max(1, Number.parseInt(new URLSearchParams(window.location.search).get('page'), 10) || 1);
+      let loadingNow = false;
+
+      function syncUrl() {
+        const next = new URLSearchParams();
+        if (page > 1) next.set('page', String(page));
+        const query = next.toString();
+        history.replaceState(null, '', query ? `?${query}` : window.location.pathname);
+      }
+
+      function postHref(post) {
+        return `post.html?slug=${encodeURIComponent(post.slug)}`;
+      }
+
+      function makeRow(post) {
+        const article = el('article', 'essay-item');
+        const row = el('div', 'writing-row');
+        const body = el('div');
+
+        const meta = el('div', 'essay-meta');
+        meta.appendChild(el('span', '', formatDate(post.published_on)));
+        meta.appendChild(el('span', 'essay-tag', 'Wit'));
+        meta.appendChild(el('span', '', readingTime(post.reading_minutes)));
+        body.appendChild(meta);
+
+        const title = el('a', 'essay-title', post.title);
+        title.href = postHref(post);
+        body.appendChild(title);
+
+        if (post.subtitle) body.appendChild(el('p', 'post-subtitle', post.subtitle));
+
+        body.appendChild(el('p', 'essay-excerpt', post.excerpt || excerpt(post.title, 160)));
+
+        const link = el('a', 'essay-link', 'Read more →');
+        link.href = postHref(post);
+        body.appendChild(link);
+
+        row.appendChild(body);
+
+        if (post.cover && post.cover.url) {
+          const image = el('img', 'writing-row-media');
+          image.src = assetUrl(post.cover.url);
+          image.alt = post.title;
+          image.loading = 'lazy';
+          row.appendChild(image);
+        }
+
+        article.appendChild(row);
+        return article;
+      }
+
+      function renderPagination(meta) {
+        if (!meta || meta.total_pages <= 1) {
+          paginationEl.hidden = true;
+          return;
+        }
+        paginationEl.hidden = false;
+        document.getElementById('page-status').textContent = `Page ${meta.page} of ${meta.total_pages}`;
+        document.getElementById('page-prev').disabled = !meta.has_prev;
+        document.getElementById('page-next').disabled = !meta.has_next;
+      }
+
+      async function load() {
+        if (loadingNow) return;
+        loadingNow = true;
+        loading(listEl, 'Gathering the words…');
+        paginationEl.hidden = true;
+
+        try {
+          const data = await api.get(`/posts?category=wits&page=${page}&per_page=${perPage}`);
+          clear(listEl);
+          const items = data.items || [];
+
+          statusEl.textContent = items.length
+            ? `${data.pagination.total} wit${data.pagination.total === 1 ? '' : 's'} published.`
+            : 'No wits published yet.';
+
+          if (!items.length) {
+            showState(listEl, {
+              title: page > 1 ? 'This page is empty' : 'No wits here yet',
+              message: page > 1
+                ? 'There are no more wits on this page.'
+                : 'Wits will appear here as they are published. In the meantime, the writing index has everything else.',
+              actionLabel: page > 1 ? 'Back to the first page' : 'Browse all writing',
+              onAction: () => {
+                if (page > 1) {
+                  page = 1;
+                  syncUrl();
+                  load();
+                } else {
+                  window.location.href = 'writing.html';
+                }
+              },
+            });
+            renderPagination(data.pagination);
+            return;
+          }
+
+          items.forEach((post) => listEl.appendChild(makeRow(post)));
+          renderPagination(data.pagination);
+        } catch (error) {
+          clear(listEl);
+          showState(listEl, {
+            error: true,
+            title: 'The wits could not be loaded',
+            message: error.message || 'Please try again in a moment.',
+            actionLabel: 'Try again',
+            onAction: load,
+          });
+        } finally {
+          loadingNow = false;
+        }
+      }
+
+      document.getElementById('page-prev').addEventListener('click', () => {
+        if (page <= 1) return;
+        page -= 1;
+        syncUrl();
+        load();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      document.getElementById('page-next').addEventListener('click', () => {
+        page += 1;
+        syncUrl();
+        load();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      window.addEventListener('popstate', () => {
+        page = Math.max(1, Number.parseInt(new URLSearchParams(window.location.search).get('page'), 10) || 1);
+        load();
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

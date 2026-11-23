@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact — Dhira</title>
+  <meta name="description" content="Write to Dhira — questions, thoughts, or just a hello." />
   <link rel="icon" href="logo.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app.css" />
   <style>
     .contact-page h1 {
       font-family: 'Cormorant Garamond', serif;
@@ -20,14 +22,15 @@
   </style>
 </head>
 <body>
-
   <nav>
     <a class="nav-logo" href="index.html">Dhira <span>धीरा</span></a>
-    <ul class="nav-links">
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="nav-links">☰</button>
+    <ul class="nav-links" id="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="personal.html">Personal</a></li>
-      <li><a href="thoughts.html">Thoughts</a></li>
-      <li><a href="book.html">The Book</a></li>
+      <li><a href="writing.html">Writing</a></li>
+      <li><a href="wits.html">Wits</a></li>
+      <li><a href="book.html">Books</a></li>
+      <li><a href="about.html">About</a></li>
       <li><a href="contact.html" class="active">Contact</a></li>
     </ul>
   </nav>
@@ -37,39 +40,66 @@
     <h1>Say <em>hello.</em></h1>
     <p class="contact-intro">Whether you want to share a thought, talk about something I've written, or just say hi — I'd love to hear from you. Drop a message below and I'll write back.</p>
 
-    <div class="contact-form" id="contactForm">
+    <form class="contact-form" id="contact-form" novalidate>
+      <div class="form-error-banner" id="form-error" role="alert" aria-live="assertive"></div>
+
       <div class="form-row">
         <div class="form-group">
           <label for="cf-name">Your Name</label>
-          <input type="text" id="cf-name" placeholder="What should I call you?" />
+          <input type="text" id="cf-name" name="name" placeholder="What should I call you?" autocomplete="name" maxlength="100" data-field="name" />
+          <span class="field-error" data-error-for="name"></span>
         </div>
         <div class="form-group">
           <label for="cf-email">Your Email</label>
-          <input type="email" id="cf-email" placeholder="so I can write back" />
+          <input type="email" id="cf-email" name="email" placeholder="so I can write back" autocomplete="email" maxlength="200" data-field="email" />
+          <span class="field-error" data-error-for="email"></span>
         </div>
       </div>
+
       <div class="form-group">
         <label for="cf-subject">Subject</label>
-        <input type="text" id="cf-subject" placeholder="What's on your mind?" />
+        <input type="text" id="cf-subject" name="subject" placeholder="What's on your mind?" maxlength="200" data-field="subject" />
+        <span class="field-error" data-error-for="subject"></span>
       </div>
+
+      <div class="form-group contact-category-row">
+        <label for="cf-category">What is this about?</label>
+        <select id="cf-category" name="category">
+          <option value="general">Just saying hello</option>
+          <option value="reader">A reader's note</option>
+          <option value="book">About the book</option>
+          <option value="poetry">About a poem</option>
+          <option value="other">Something else</option>
+        </select>
+      </div>
+
       <div class="form-group">
         <label for="cf-message">Message</label>
-        <textarea id="cf-message" placeholder="Go ahead, take your time..."></textarea>
+        <textarea id="cf-message" name="message" placeholder="Go ahead, take your time..." maxlength="5000" data-field="message"></textarea>
+        <span class="field-error" data-error-for="message"></span>
       </div>
-      <div class="form-submit">
-        <button class="btn-send" type="button" onclick="handleContact()">Send Message</button>
-        <span class="form-note">I read every message personally.</span>
-      </div>
-    </div>
 
-    <div class="contact-success" id="contactSuccess">
-      ✦ &nbsp;Thank you for writing. I'll get back to you soon.
+      <!-- Honeypot: hidden from people, tempting to bots. -->
+      <div class="honeypot" aria-hidden="true">
+        <label for="cf-website">Website</label>
+        <input type="text" id="cf-website" name="website" tabindex="-1" autocomplete="off" />
+      </div>
+
+      <div class="form-submit">
+        <button class="btn-send" type="submit" id="contact-submit">Send Message</button>
+        <span class="form-note" id="form-note">I read every message personally.</span>
+      </div>
+    </form>
+
+    <div class="contact-success" id="contact-success" role="status" aria-live="polite">
+      <p>✦ &nbsp;<span id="contact-success-text">Thank you for writing. I'll get back to you soon.</span></p>
+      <button class="btn-outline" type="button" id="contact-again" style="margin-top:1rem;">Write another message</button>
     </div>
 
     <hr class="contact-divider" />
 
     <p class="contact-alt">
-      Prefer email directly? Reach me at <a href="mailto:dhirathepen@gmail.com">dhirathepen@gmail.com</a><br/>
+      Prefer email directly? Reach me at <a href="mailto:dhirathepen@gmail.com" id="contact-email">dhirathepen@gmail.com</a><br/>
       I usually reply within a few days — not because I'm slow, but because I think before I write.
     </p>
   </div>
@@ -79,22 +109,146 @@
     <div class="footer-devanagari">धीरा</div>
   </footer>
 
+  <script src="config.js"></script>
+  <script src="js/dhira.js"></script>
   <script>
-    function handleContact() {
-      const name = document.getElementById('cf-name').value.trim();
-      const email = document.getElementById('cf-email').value.trim();
-      const message = document.getElementById('cf-message').value.trim();
-      if (!name || !email || !message) {
-        alert('Please fill in your name, email, and message.');
-        return;
+    (function initContact() {
+      const { api, clear } = window.Dhira;
+
+      const form = document.getElementById('contact-form');
+      const submit = document.getElementById('contact-submit');
+      const errorBanner = document.getElementById('form-error');
+      const success = document.getElementById('contact-success');
+      const successText = document.getElementById('contact-success-text');
+      const note = document.getElementById('form-note');
+      const again = document.getElementById('contact-again');
+
+      const fields = {
+        name: document.getElementById('cf-name'),
+        email: document.getElementById('cf-email'),
+        subject: document.getElementById('cf-subject'),
+        message: document.getElementById('cf-message'),
+        category: document.getElementById('cf-category'),
+        website: document.getElementById('cf-website'),
+      };
+
+      function errorSlot(name) {
+        return form.querySelector(`[data-error-for="${name}"]`);
       }
-      const subject = document.getElementById('cf-subject').value.trim() || 'Hello from Dhira';
-      const body = `Hi Mohith,\n\n${message}\n\n— ${name}\n${email}`;
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=dhirathepen@gmail.com&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(gmailUrl, '_blank');
-      document.getElementById('contactForm').style.opacity = '0.4';
-      document.getElementById('contactSuccess').style.display = 'block';
-    }
+
+      function setFieldError(name, message) {
+        const slot = errorSlot(name);
+        const input = fields[name];
+        if (slot) slot.textContent = message || '';
+        if (input) {
+          input.classList.toggle('is-invalid', Boolean(message));
+          if (message) input.setAttribute('aria-invalid', 'true');
+          else input.removeAttribute('aria-invalid');
+        }
+      }
+
+      function clearErrors() {
+        errorBanner.textContent = '';
+        errorBanner.classList.remove('is-visible');
+        Object.keys(fields).forEach((name) => setFieldError(name, ''));
+      }
+
+      function showBanner(message) {
+        errorBanner.textContent = message;
+        errorBanner.classList.add('is-visible');
+      }
+
+      Object.values(fields).forEach((input) => {
+        if (!input) return;
+        input.addEventListener('input', () => {
+          const name = input.getAttribute('data-field');
+          if (name) setFieldError(name, '');
+        });
+      });
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (submit.disabled) return;
+
+        clearErrors();
+
+        const name = fields.name.value.trim();
+        const email = fields.email.value.trim();
+        let subject = fields.subject.value.trim();
+        const message = fields.message.value.trim();
+        const category = fields.category.value;
+
+        let firstInvalid = null;
+        if (!name) firstInvalid = firstInvalid || ['name', 'Please tell me your name.'];
+        if (name && name.length < 2) firstInvalid = firstInvalid || ['name', 'Please use at least 2 characters.'];
+        if (!email) firstInvalid = firstInvalid || ['email', 'An email address is needed so I can reply.'];
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) firstInvalid = firstInvalid || ['email', 'That email address does not look right.'];
+        if (!subject) subject = `A note from ${name || 'a reader'}`;
+        if (subject.length < 3) firstInvalid = firstInvalid || ['subject', 'Please add a short subject.'];
+        if (!message) firstInvalid = firstInvalid || ['message', 'Please write a message.'];
+        else if (message.length < 10) firstInvalid = firstInvalid || ['message', 'Please write at least 10 characters.'];
+
+        if (firstInvalid) {
+          setFieldError(firstInvalid[0], firstInvalid[1]);
+          showBanner('Please check the highlighted fields and try again.');
+          const target = fields[firstInvalid[0]];
+          if (target) target.focus();
+          return;
+        }
+
+        submit.disabled = true;
+        submit.textContent = 'Sending…';
+        form.classList.add('is-sending');
+        note.textContent = 'Sending your message…';
+
+        try {
+          const data = await api.post('/contact', {
+            name,
+            email,
+            subject,
+            message,
+            category,
+            website: fields.website.value,
+          });
+
+          form.classList.add('is-hidden');
+          successText.textContent = (data && data.message) || 'Thank you for writing. I will write back soon.';
+          success.classList.add('is-visible');
+          success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          form.reset();
+        } catch (error) {
+          const serverFields = (error && error.fields) || {};
+          Object.keys(serverFields).forEach((key) => setFieldError(key, serverFields[key]));
+          showBanner((error && error.message) || 'Your message could not be sent. Please try again.');
+          const firstKey = Object.keys(serverFields)[0];
+          if (firstKey && fields[firstKey]) fields[firstKey].focus();
+          else errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } finally {
+          submit.disabled = false;
+          submit.textContent = 'Send Message';
+          form.classList.remove('is-sending');
+          note.textContent = 'I read every message personally.';
+        }
+      });
+
+      again.addEventListener('click', () => {
+        success.classList.remove('is-visible');
+        form.classList.remove('is-hidden');
+        clearErrors();
+        fields.name.focus();
+      });
+
+      // Use the author's public email if one is configured.
+      api.get('/author')
+        .then(({ author }) => {
+          if (!author || !author.public_email) return;
+          const link = document.getElementById('contact-email');
+          if (!link) return;
+          link.href = `mailto:${author.public_email}`;
+          link.textContent = author.public_email;
+        })
+        .catch(() => {});
+    })();
   </script>
 </body>
 </html>
