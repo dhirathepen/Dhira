@@ -28,7 +28,7 @@ router.get(
         (select count(*) from posts where type = 'article' and status = 'published') as published_articles,
         (select count(*) from books) as books_total,
         (select count(*) from messages) as messages_total,
-        (select count(*) from messages where is_read = 0) as messages_unread
+        (select count(*) from messages where is_read = false) as messages_unread
     `);
 
     const [recentPosts, recentMessages] = await Promise.all([

@@ -25,15 +25,15 @@ select:focus-visible {
 .nav-toggle {
   display: none;
   background: none;
-  border: 1px solid var(--stone);
-  color: var(--charcoal);
+  border: 1px solid rgba(243, 229, 190, 0.4);
+  color: var(--lavender-light);
   width: 40px; height: 40px;
   font-size: 1.05rem;
   line-height: 1;
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s;
 }
-.nav-toggle:hover { border-color: var(--sage); color: var(--sage); }
+.nav-toggle:hover { border-color: var(--gold-light); color: var(--gold-light); }
 
 @media (max-width: 1080px) {
   .nav-toggle { display: inline-flex; align-items: center; justify-content: center; }
@@ -44,9 +44,9 @@ select:focus-visible {
     top: 64px; left: 0; right: 0;
     flex-direction: column;
     gap: 0;
-    background: var(--white);
-    border-bottom: 1px solid var(--stone);
-    box-shadow: 0 24px 40px rgba(0, 0, 0, 0.06);
+    background: var(--deep);
+    border-bottom: 1px solid rgba(243, 229, 190, 0.3);
+    box-shadow: 0 24px 40px rgba(0, 0, 0, 0.22);
     padding: 0.4rem 0;
     max-height: calc(100vh - 64px);
     overflow-y: auto;
@@ -61,8 +61,9 @@ select:focus-visible {
   .nav-links a.active {
     border-bottom: none;
     padding-bottom: 0.95rem;
-    background: var(--off-white);
-    box-shadow: inset 2px 0 0 var(--sage);
+    background: rgba(0, 0, 0, 0.22);
+    color: var(--white);
+    box-shadow: inset 2px 0 0 var(--gold);
   }
 }
 
@@ -100,7 +101,7 @@ select:focus-visible {
   margin: 2rem 0;
 }
 .state-card .state-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.5rem;
   font-weight: 400;
   color: var(--charcoal);
@@ -115,8 +116,8 @@ select:focus-visible {
   margin: 0 auto;
 }
 .state-card .state-action { margin-top: 1.5rem; }
-.state-error { border-left: 3px solid #c98b86; }
-.state-error .state-title { color: #8c3f38; }
+.state-error { border-left: 3px solid var(--red); }
+.state-error .state-title { color: var(--red); }
 
 /* ── Search & filters ── */
 .search-form {
@@ -135,7 +136,7 @@ select:focus-visible {
   outline: none;
   background: transparent;
   padding: 0.9rem 1rem;
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.88rem;
   font-weight: 300;
   color: var(--charcoal);
@@ -144,17 +145,17 @@ select:focus-visible {
 .search-form input[type="search"]::placeholder { color: var(--light-grey); }
 .search-btn {
   border: none;
-  background: var(--charcoal);
+  background: var(--deep);
   color: var(--white);
   padding: 0 1.5rem;
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.7rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.2s;
 }
-.search-btn:hover { background: var(--sage); }
+.search-btn:hover { background: var(--red); }
 
 .filter-chips {
   display: flex;
@@ -166,7 +167,7 @@ select:focus-visible {
   border: 1px solid var(--stone);
   background: var(--white);
   color: var(--mid-grey);
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -176,7 +177,7 @@ select:focus-visible {
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 .chip:hover { border-color: var(--sage-light); color: var(--charcoal); }
-.chip.is-active { background: var(--charcoal); border-color: var(--charcoal); color: var(--white); }
+.chip.is-active { background: var(--deep); border-color: var(--deep); color: var(--white); }
 
 /* ── Writing index ── */
 .writing-section {
@@ -206,7 +207,7 @@ select:focus-visible {
 .featured-writing-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 .featured-writing:hover .featured-writing-media img { transform: scale(1.03); }
 .featured-writing-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: clamp(1.8rem, 3vw, 2.5rem);
   font-weight: 400;
   line-height: 1.2;
@@ -261,7 +262,7 @@ select:focus-visible {
   background: var(--white);
   color: var(--mid-grey);
   padding: 0.6rem 1.1rem;
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -282,7 +283,7 @@ select:focus-visible {
   display: block;
 }
 .post-subtitle {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: clamp(1.2rem, 2vw, 1.55rem);
   font-weight: 300;
   font-style: italic;
@@ -295,7 +296,7 @@ select:focus-visible {
 .post-body p:last-child { margin-bottom: 0; }
 
 .post-body.is-poem {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: clamp(1.25rem, 2vw, 1.45rem);
   line-height: 1.95;
   font-weight: 400;
@@ -323,7 +324,7 @@ select:focus-visible {
   border-radius: 2px;
   text-decoration: none;
 }
-.post-tag:hover { background: var(--sage); color: var(--white); }
+.post-tag:hover { background: var(--red); color: var(--white); }
 
 .post-nav {
   display: grid;
@@ -344,7 +345,7 @@ select:focus-visible {
 }
 .post-nav a:hover { border-color: var(--sage); color: var(--charcoal); }
 .post-nav .post-nav-label { display: block; font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--light-grey); margin-bottom: 0.4rem; }
-.post-nav .post-nav-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; line-height: 1.35; color: var(--charcoal); }
+.post-nav .post-nav-title { font-family: 'Fraunces', Georgia, serif; font-size: 1.1rem; line-height: 1.35; color: var(--charcoal); }
 .post-nav .is-next { text-align: right; }
 .post-nav .is-next .post-nav-label { justify-content: flex-end; }
 
@@ -369,7 +370,7 @@ select:focus-visible {
   content: '';
   position: absolute; bottom: 0; left: 0;
   width: 100%; height: 3px;
-  background: var(--sage);
+  background: var(--red);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease;
@@ -377,9 +378,9 @@ select:focus-visible {
 .latest-card:hover { background: var(--off-white); border-color: var(--sage-light); }
 .latest-card:hover::before { transform: scaleX(1); }
 .latest-card-meta { font-size: 0.67rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--light-grey); margin-bottom: 1.1rem; display: flex; gap: 0.7rem; flex-wrap: wrap; }
-.latest-card-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 500; line-height: 1.25; margin-bottom: 0.8rem; color: var(--charcoal); }
+.latest-card-title { font-family: 'Fraunces', Georgia, serif; font-size: 1.5rem; font-weight: 500; line-height: 1.25; margin-bottom: 0.8rem; color: var(--charcoal); }
 .latest-card-excerpt { font-size: 0.85rem; font-weight: 300; color: var(--mid-grey); line-height: 1.7; margin-bottom: 1.4rem; }
-.latest-card-link { margin-top: auto; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sage); }
+.latest-card-link { margin-top: auto; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); }
 
 /* ── Book page ── */
 .book-page-section { max-width: 860px; margin: 0 auto; padding: 0 4rem 8rem; }
@@ -401,13 +402,13 @@ select:focus-visible {
   background: var(--off-white);
 }
 .book-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: clamp(2rem, 3.5vw, 3rem);
   font-weight: 300;
   line-height: 1.15;
   margin-bottom: 0.4rem;
 }
-.book-subtitle { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.15rem; color: var(--sage); margin-bottom: 1.5rem; }
+.book-subtitle { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-size: 1.15rem; color: var(--sage); margin-bottom: 1.5rem; }
 .book-text { font-size: 0.94rem; font-weight: 300; line-height: 1.9; color: var(--mid-grey); }
 .book-text p { margin-bottom: 1.2rem; white-space: pre-wrap; }
 .book-text p:last-child { margin-bottom: 0; }
@@ -415,7 +416,7 @@ select:focus-visible {
 .book-synopsis-label { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--light-grey); margin-bottom: 1rem; }
 .book-progress-meta { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.6rem; font-size: 0.8rem; color: var(--mid-grey); }
 .book-section-heading {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.6rem;
   font-weight: 400;
   color: var(--charcoal);
@@ -434,7 +435,7 @@ select:focus-visible {
 .update-featured-body { padding: 2.5rem; }
 .update-kicker { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage); font-weight: 500; margin-bottom: 0.9rem; display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; }
 .update-kicker .update-date-text { color: var(--light-grey); }
-.update-featured-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.7rem, 3vw, 2.3rem); font-weight: 400; line-height: 1.25; margin-bottom: 1.2rem; }
+.update-featured-title { font-family: 'Fraunces', Georgia, serif; font-size: clamp(1.7rem, 3vw, 2.3rem); font-weight: 400; line-height: 1.25; margin-bottom: 1.2rem; }
 .update-description { font-size: 0.94rem; font-weight: 300; line-height: 1.9; color: var(--mid-grey); }
 .update-description p { margin-bottom: 1.2rem; white-space: pre-wrap; }
 .update-description p:last-child { margin-bottom: 0; }
@@ -459,7 +460,7 @@ select:focus-visible {
 .update-item:last-child .update-rail::after { display: none; }
 .update-date { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--light-grey); line-height: 1.6; }
 .update-card { border-left: 1px solid var(--stone); padding-left: 2rem; padding-bottom: 0.5rem; }
-.update-card-title { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 500; color: var(--charcoal); margin: 0.5rem 0 0.7rem; line-height: 1.35; }
+.update-card-title { font-family: 'Fraunces', Georgia, serif; font-size: 1.35rem; font-weight: 500; color: var(--charcoal); margin: 0.5rem 0 0.7rem; line-height: 1.35; }
 .update-card-image { width: 100%; max-height: 280px; object-fit: cover; border-radius: 4px; border: 1px solid var(--stone); margin: 0.4rem 0 1rem; display: block; }
 .update-badge {
   display: inline-block;
@@ -487,60 +488,23 @@ select:focus-visible {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
   display: block;
 }
-.about-name { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 300; line-height: 1.15; margin-bottom: 0.4rem; }
-.about-pen { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); margin-bottom: 1.6rem; }
-.about-tagline { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.3rem; color: var(--sage); line-height: 1.5; margin-bottom: 1.8rem; }
-.about-intro { font-size: 0.98rem; font-weight: 300; line-height: 1.9; color: var(--charcoal); margin-bottom: 2.5rem; }
+.about-intro { font-size: 0.98rem; font-weight: 300; line-height: 1.9; color: var(--charcoal); margin-bottom: 0; }
 .about-intro p { margin-bottom: 1.1rem; }
-.about-block { margin-bottom: 2.5rem; }
-.about-block:last-child { margin-bottom: 0; }
-.about-block-label { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--light-grey); margin-bottom: 0.8rem; }
-.about-block-text { font-size: 0.92rem; font-weight: 300; line-height: 1.85; color: var(--mid-grey); }
-.about-block-text p { margin-bottom: 1.1rem; white-space: pre-wrap; }
-.about-block-text p:last-child { margin-bottom: 0; }
-.about-interests { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.about-interests span {
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--sage);
-  background: var(--sage-light);
-  border-radius: 2px;
-  padding: 0.3rem 0.65rem;
-}
-.social-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; }
-.social-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  border: 1px solid var(--stone);
-  padding: 0.9rem 1rem;
-  text-decoration: none;
-  color: var(--charcoal);
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  transition: border-color 0.2s, background 0.2s;
-}
-.social-link:hover { border-color: var(--sage); background: var(--off-white); }
-.social-link .social-arrow { color: var(--sage); }
-.about-contact-line { font-size: 0.9rem; font-weight: 300; color: var(--mid-grey); line-height: 1.8; }
-.about-contact-line a { color: var(--sage); text-decoration: none; }
-.about-contact-line a:hover { text-decoration: underline; }
+.about-intro p:last-child { margin-bottom: 0; }
 
 /* ── Contact form extras ── */
 .contact-category-row { max-width: 420px; }
 .honeypot { position: absolute !important; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
-.field-error { font-size: 0.74rem; color: #b4544b; margin-top: 0.1rem; min-height: 0; }
+.field-error { font-size: 0.74rem; color: var(--red); margin-top: 0.1rem; min-height: 0; }
 .form-group input.is-invalid,
 .form-group textarea.is-invalid,
-.form-group select.is-invalid { border-color: #c98b86; }
+.form-group select.is-invalid { border-color: var(--red); }
 .form-error-banner {
   display: none;
   padding: 1rem 1.3rem;
-  background: #fdf4f3;
-  border-left: 2px solid #c98b86;
-  color: #8c3f38;
+  background: var(--red-light);
+  border-left: 2px solid var(--red);
+  color: var(--red);
   font-size: 0.85rem;
   font-weight: 300;
   line-height: 1.7;
@@ -565,8 +529,8 @@ select:focus-visible {
   margin: 0 auto;
   padding: 160px 4rem 100px;
 }
-.error-page h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(3rem, 8vw, 6rem); font-weight: 300; line-height: 1; margin-bottom: 1.5rem; }
-.error-page h1 em { color: var(--sage); font-style: italic; }
+.error-page h1 { font-family: 'Fraunces', Georgia, serif; font-size: clamp(3rem, 8vw, 6rem); font-weight: 300; line-height: 1; margin-bottom: 1.5rem; }
+.error-page h1 em { color: var(--lavender); font-style: italic; }
 .error-page p { font-size: 0.95rem; color: var(--mid-grey); font-weight: 300; line-height: 1.85; margin-bottom: 2rem; max-width: 440px; }
 
 /* ── Responsive ── */
@@ -639,7 +603,7 @@ select:focus-visible {
 }
 .thought-title {
   display: block;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.2rem;
   font-weight: 500;
   line-height: 1.35;
@@ -682,7 +646,7 @@ select:focus-visible {
   color: var(--sage);
 }
 .book-cover-mark {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 2.2rem;
   line-height: 1;
 }

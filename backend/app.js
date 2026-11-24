@@ -41,9 +41,11 @@ app.use(
         imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
         connectSrc: connectSources,
         objectSrc: ["'none'"],
+        frameSrc: ["'self'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
-        frameAncestors: ["'none'"],
+        // The home page previews itself inside the book-opening intro.
+        frameAncestors: ["'self'"],
         ...(config.isProduction
           ? { upgradeInsecureRequests: [] }
           : { upgradeInsecureRequests: null }),
@@ -105,7 +107,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', publicRoutes);
 
 /* ── frontend ─────────────────────────────────────────────────────────────── */
-app.get('/', (req, res) => res.sendFile(path.join(config.frontendDir, 'intro.html')));
+app.get('/', (req, res) => res.sendFile(path.join(config.frontendDir, 'index.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(config.frontendDir, 'admin.html')));
 
 app.use(
@@ -158,9 +160,15 @@ app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
     return res.status(413).json({ error: 'That request is too large.' });
   }
 
-  // SQLite constraint violations (unique / primary key / foreign key)
-  if (typeof err.code === 'string' && err.code.startsWith('SQLITE_CONSTRAINT')) {
-    const message = err.code.includes('FOREIGNKEY')
+  // Constraint violations from SQLite (SQLITE_CONSTRAINT_*) or Postgres
+  // (23505 unique, 23503 foreign key, 23502 not null).
+  const constraintCode = typeof err.code === 'string' ? err.code : '';
+  if (
+    constraintCode.startsWith('SQLITE_CONSTRAINT') ||
+    ['23505', '23503', '23502'].includes(constraintCode)
+  ) {
+    const foreignKey = constraintCode.includes('FOREIGNKEY') || constraintCode === '23503';
+    const message = foreignKey
       ? 'That item is still in use somewhere else.'
       : 'That value is already in use.';
     return res.status(409).json({ error: message });

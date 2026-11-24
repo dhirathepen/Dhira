@@ -8,7 +8,10 @@ const { deleteExpiredSessions } = require('./lib/session');
 
 async function start() {
   await db.raw('select 1');
-  console.log(`✓ SQLite connected (${config.databaseFile})`);
+  const dbLabel = config.usePostgres
+    ? `Supabase Postgres (${new URL(config.databaseUrl).host})`
+    : `SQLite (${config.databaseFile})`;
+  console.log(`✓ Database connected: ${dbLabel}`);
 
   if (config.runMigrations) {
     const [, applied] = await db.migrate.latest();

@@ -61,7 +61,7 @@ router.get(
     const counts = await db('messages')
       .select(
         db.raw('count(*) as total'),
-        db.raw('sum(case when is_read = 0 then 1 else 0 end) as unread')
+        db.raw('sum(case when is_read = false then 1 else 0 end) as unread')
       )
       .first();
 

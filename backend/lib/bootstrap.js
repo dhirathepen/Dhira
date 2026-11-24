@@ -22,15 +22,20 @@ const DEFAULT_AUTHOR = {
   id: 1,
   name: 'Mohith',
   pen_name: 'Dhira',
-  tagline: 'A jack of all trades, exploring everything.',
-  introduction:
-    "I'm Mohith, writing under the pen name Dhira. I enjoy exploring new ideas, learning new skills, and taking on challenges — just for fun.",
-  biography:
-    'I am firmly committed to the philosophy of being a jack of all trades, master of none — but often better than a master of one. My curiosity often leads me to different fields and interests, giving me the opportunity to learn from a wide range of experiences. Writing is always one of them.',
-  writing_interests: 'Essays · Poetry · Observation',
+  tagline: 'A jack of all trades, master of none.',
+  introduction: [
+    'This is Mohith.',
+    'A man with a billion dots scattered across the infinite sky of English stars, forever searching for constellations in words, meaning in silence, and stories in the ordinary.',
+    '',
+    'Not merely to master books, but to become a great storyteller; not simply to write words, but to leave something behind in them.',
+    '',
+    'Writing as Dhira.',
+  ].join('\n'),
+  biography: '',
+  writing_interests: '',
   personal_description: '',
   location: '',
-  public_email: 'dhirathepen@gmail.com',
+  public_email: null,
   social_links: '{}',
 };
 

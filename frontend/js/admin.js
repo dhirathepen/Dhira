@@ -42,17 +42,6 @@
     ['published', 'Published'],
   ];
 
-  const SOCIAL_FIELDS = [
-    ['website', 'Website'],
-    ['instagram', 'Instagram'],
-    ['x', 'X (Twitter)'],
-    ['facebook', 'Facebook'],
-    ['goodreads', 'Goodreads'],
-    ['linkedin', 'LinkedIn'],
-    ['youtube', 'YouTube'],
-    ['newsletter', 'Newsletter'],
-  ];
-
   let currentAdmin = null;
   let categoriesCache = null;
   let activeView = 0;
@@ -1768,16 +1757,7 @@
       const data = await call(() => api.get('/admin/author'));
       if (token !== activeView) return;
       const author = data.author || {};
-      const socials = author.social_links || {};
       clear(viewRoot);
-
-      const socialFields = SOCIAL_FIELDS.map(([key, label]) => `
-        <div class="field">
-          <label for="author-social-${key}">${label}</label>
-          <input id="author-social-${key}" name="social_${key}" maxlength="500" placeholder="https://" autocomplete="off" />
-          <span class="field-error" data-error-for="social_${key}"></span>
-        </div>
-      `).join('');
 
       const form = document.createElement('form');
       form.id = 'author-form';
@@ -1805,49 +1785,16 @@
                   <span class="field-error" data-error-for="tagline"></span>
                 </div>
                 <div class="field span-2">
-                  <label for="author-introduction">Introduction</label>
-                  <textarea id="author-introduction" name="introduction" maxlength="4000"></textarea>
+                  <label for="author-introduction">About Me</label>
+                  <textarea id="author-introduction" name="introduction" maxlength="4000" style="min-height:180px;"></textarea>
                   <span class="field-error" data-error-for="introduction"></span>
                 </div>
                 <div class="field span-2">
-                  <label for="author-biography">Biography</label>
-                  <textarea id="author-biography" name="biography" maxlength="12000" style="min-height:140px;"></textarea>
-                  <span class="field-error" data-error-for="biography"></span>
-                </div>
-                <div class="field span-2">
-                  <label for="author-personal">Beyond the page</label>
-                  <textarea id="author-personal" name="personal_description" maxlength="8000"></textarea>
-                  <span class="field-error" data-error-for="personal_description"></span>
-                </div>
-                <div class="field">
-                  <label for="author-interests">Writing interests</label>
-                  <input id="author-interests" name="writing_interests" maxlength="500" placeholder="Essays · Poetry · Observation" />
-                  <span class="field-error" data-error-for="writing_interests"></span>
-                </div>
-                <div class="field">
-                  <label for="author-location">Location</label>
-                  <input id="author-location" name="location" maxlength="120" />
-                  <span class="field-error" data-error-for="location"></span>
-                </div>
-                <div class="field">
-                  <label for="author-email">Public email</label>
-                  <input id="author-email" name="public_email" type="email" maxlength="200" />
-                  <span class="field-error" data-error-for="public_email"></span>
-                </div>
-                <div class="field">
                   <span class="field-label">Profile image</span>
                   <div id="author-image-slot"></div>
                   <span class="field-error" data-error-for="profile_image_id"></span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head"><h2>Elsewhere on the internet</h2></div>
-            <div class="card-body">
-              <div class="form-grid">${socialFields}</div>
-              <p class="hint mt-1">Full links starting with http:// or https://. Empty fields are hidden.</p>
             </div>
           </div>
 
@@ -1859,12 +1806,8 @@
       `;
       viewRoot.appendChild(form);
 
-      const textFields = [
-        'name', 'pen_name', 'tagline', 'introduction', 'biography',
-        'personal_description', 'writing_interests', 'location', 'public_email',
-      ];
+      const textFields = ['name', 'pen_name', 'tagline', 'introduction'];
       textFields.forEach((name) => setValue(form, name, author[name]));
-      SOCIAL_FIELDS.forEach(([key]) => setValue(form, `social_${key}`, socials[key]));
 
       const uploader = createUploader({ initial: author.profile_image, label: 'Choose portrait', emptyText: 'No portrait selected' });
       form.querySelector('#author-image-slot').appendChild(uploader.node);
@@ -1873,23 +1816,13 @@
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         clearFieldErrors(form);
-        const social_links = {};
-        SOCIAL_FIELDS.forEach(([key]) => {
-          social_links[key] = getValue(form, `social_${key}`).trim();
-        });
-
         const payload = {
           name: getValue(form, 'name').trim(),
           pen_name: getValue(form, 'pen_name').trim(),
           tagline: getValue(form, 'tagline').trim(),
           introduction: getValue(form, 'introduction'),
-          biography: getValue(form, 'biography'),
-          writing_interests: getValue(form, 'writing_interests').trim(),
-          personal_description: getValue(form, 'personal_description'),
-          location: getValue(form, 'location').trim(),
-          public_email: getValue(form, 'public_email').trim(),
           profile_image_id: uploader.getValue(),
-          social_links,
+          social_links: {},
         };
         if (!payload.name) {
           applyFieldErrors(form, { name: 'Add the author name.' });

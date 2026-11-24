@@ -6,8 +6,8 @@
  *
  *   node resetdb.js
  *
- * SQLite has no TRUNCATE ... CASCADE, so child tables are deleted explicitly
- * in foreign-key-safe order and the AUTOINCREMENT counters are reset.
+ * Child tables are deleted explicitly in foreign-key-safe order so this works
+ * on both SQLite and Postgres/Supabase.
  */
 
 const db = require('./db');
@@ -15,7 +15,9 @@ const { ensureDefaults } = require('./lib/bootstrap');
 const config = require('./config');
 
 async function reset() {
-  console.log(`Resetting content in ${config.databaseFile} ...`);
+  console.log(
+    `Resetting content in ${config.usePostgres ? 'Supabase Postgres' : config.databaseFile} ...`
+  );
 
   // Children first: post_tags -> posts, then everything referencing images.
   const contentTables = [
@@ -31,12 +33,14 @@ async function reset() {
     await db(table).del();
   }
 
-  // Reset AUTOINCREMENT ids for the tables we just emptied.
-  const hasSequence = await db.raw(
-    "select count(*) as n from sqlite_master where type = 'table' and name = 'sqlite_sequence'"
-  );
-  if (Number(hasSequence[0].n) > 0) {
-    await db.raw('delete from sqlite_sequence where name in (?)', [contentTables]);
+  // SQLite keeps AUTOINCREMENT counters in sqlite_sequence; Postgres does not.
+  if (!config.usePostgres) {
+    const hasSequence = await db.raw(
+      "select count(*) as n from sqlite_master where type = 'table' and name = 'sqlite_sequence'"
+    );
+    if (Number(hasSequence[0].n) > 0) {
+      await db.raw('delete from sqlite_sequence where name in (?)', [contentTables]);
+    }
   }
 
   // ensureDefaults() seeds categories, book info and the author profile.

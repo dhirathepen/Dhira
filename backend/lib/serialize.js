@@ -1,5 +1,7 @@
 'use strict';
 
+const { toDateOnly } = require('./dates');
+
 /** JSON shapes returned by the API. No secrets ever pass through here. */
 
 function imageRef(id) {
@@ -31,7 +33,7 @@ function serializePost(row, tags = [], { includeContent = false } = {}) {
     type: row.type,
     status: row.status,
     featured: Boolean(row.featured),
-    published_on: row.published_on ? String(row.published_on).slice(0, 10) : null,
+    published_on: toDateOnly(row.published_on),
     category: row.category_id
       ? { id: row.category_id, name: row.category_name, slug: row.category_slug }
       : null,
@@ -65,7 +67,7 @@ function serializeBook(row) {
     progress_percent: row.progress_percent,
     progress_note: row.progress_note || '',
     status: row.status,
-    release_date: row.release_date ? String(row.release_date).slice(0, 10) : null,
+    release_date: toDateOnly(row.release_date),
     cover: imageRef(row.cover_image_id),
     created_at: row.created_at,
     updated_at: row.updated_at,

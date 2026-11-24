@@ -21,4 +21,27 @@ function fromDbTimestamp(value) {
     : text);
 }
 
-module.exports = { toDbTimestamp, fromDbTimestamp };
+/**
+ * Dialect-neutral "now minus N minutes" for rate-limit queries.
+ * Values passed here are internal constants, never user input.
+ */
+function nowMinus(db, minutes) {
+  const amount = Number(minutes);
+  if (!Number.isFinite(amount)) throw new TypeError('minutes must be a number');
+  if (db.client && db.client.config && db.client.config.client === 'pg') {
+    return db.raw(`NOW() - INTERVAL '${amount} minutes'`);
+  }
+  return db.raw(`datetime('now', '-${amount} minutes')`);
+}
+
+/**
+ * Postgres DATE columns come back as Date objects while SQLite returns text.
+ * Normalize both to the API's `YYYY-MM-DD` shape without a timezone shift.
+ */
+function toDateOnly(value) {
+  if (value === null || value === undefined || value === '') return null;
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
+module.exports = { toDbTimestamp, fromDbTimestamp, nowMinus, toDateOnly };

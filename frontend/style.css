@@ -3,19 +3,27 @@
 
 :root {
   --white: #FFFFFF;
-  --off-white: #F8F7F5;
-  --stone: #E8E4DF;
-  --charcoal: #1A1A1A;
-  --mid-grey: #6B6B6B;
-  --light-grey: #A0A0A0;
-  --sage: #8A9E8C;
-  --sage-light: #D4DDD5;
+  --off-white: #F8F5FC;
+  --stone: #D9CDE8;
+  --charcoal: #111111;
+  --deep: #2B1B3B;
+  --mid-grey: #625B68;
+  --light-grey: #9C94A4;
+  --sage: #9A7420;
+  --sage-light: #F3E5BE;
+  --lavender: #8E76B8;
+  --lavender-light: #E9E0F5;
+  --gold: #9A7420;
+  --gold-light: #F3E5BE;
+  --red: #A33B3F;
+  --red-light: #F6DEDE;
+  --grey: #625B68;
 }
 
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   background: var(--white);
   color: var(--charcoal);
   font-size: 15px;
@@ -28,9 +36,8 @@ nav {
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 100;
-  background: rgba(255,255,255,0.94);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--stone);
+  background: #2B1B3B;
+  border-bottom: 1px solid rgba(243, 229, 190, 0.3);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -39,18 +46,18 @@ nav {
 }
 
 .nav-logo {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.6rem;
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--charcoal);
+  color: var(--white);
   text-decoration: none;
 }
 
 .nav-logo span {
   font-weight: 300;
-  color: var(--sage);
+  color: var(--gold-light);
   font-style: italic;
   font-size: 0.85em;
   letter-spacing: 0.04em;
@@ -69,15 +76,15 @@ nav {
   font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--mid-grey);
+  color: rgba(233, 224, 245, 0.8);
   text-decoration: none;
   transition: color 0.2s;
 }
 
-.nav-links a:hover { color: var(--charcoal); }
+.nav-links a:hover { color: var(--white); }
 .nav-links a.active {
-  color: var(--charcoal);
-  border-bottom: 1px solid var(--sage);
+  color: var(--white);
+  border-bottom: 1px solid var(--gold);
   padding-bottom: 2px;
 }
 
@@ -91,25 +98,26 @@ nav {
 /* ── FOOTER ── */
 footer {
   padding: 3rem 4rem;
-  border-top: 1px solid var(--stone);
+  background: var(--deep);
+  color: rgba(255, 255, 255, 0.72);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .footer-logo {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.1rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   font-weight: 500;
-  color: var(--charcoal);
+  color: var(--white);
 }
 
 .footer-devanagari {
   font-size: 1rem;
   font-weight: 500;
-  color: var(--sage);
+  color: var(--lavender-light);
 }
 
 /* ── SUBPAGE HEADER ── */
@@ -123,21 +131,21 @@ footer {
   font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--sage);
+  color: var(--red);
   font-weight: 500;
   margin-bottom: 1rem;
 }
 
 .subpage-container h1 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: clamp(2.4rem, 4vw, 3.8rem);
   font-weight: 300;
   line-height: 1.15;
   margin-bottom: 1rem;
-  color: var(--charcoal);
+  color: var(--deep);
 }
 
-.subpage-container h1 em { font-style: italic; color: var(--sage); }
+.subpage-container h1 em { font-style: italic; color: var(--lavender); }
 
 .subpage-intro {
   font-size: 0.95rem;
@@ -186,7 +194,7 @@ footer {
 }
 
 .essay-title {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 1.8rem;
   font-weight: 500;
   color: var(--charcoal);
@@ -296,7 +304,7 @@ footer {
   border: 1px solid var(--stone);
   background: var(--white);
   color: var(--charcoal);
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.88rem;
   font-weight: 300;
   outline: none;
@@ -325,10 +333,10 @@ footer {
 
 .btn-send {
   padding: 0.9rem 2.4rem;
-  background: var(--charcoal);
+  background: var(--deep);
   color: var(--white);
   border: none;
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 0.75rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -337,7 +345,7 @@ footer {
   transition: background 0.2s;
 }
 
-.btn-send:hover { background: var(--sage); }
+.btn-send:hover { background: var(--red); }
 
 .form-note {
   font-size: 0.75rem;
@@ -393,7 +401,7 @@ footer {
 }
 
 .stat-val {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: 2.4rem;
   font-weight: 400;
   color: var(--sage);
@@ -498,7 +506,7 @@ footer {
 }
 
 .blog-reader h1 {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: 'Fraunces', Georgia, serif;
   font-size: clamp(2rem, 4vw, 3.2rem);
   font-weight: 300;
   line-height: 1.15;

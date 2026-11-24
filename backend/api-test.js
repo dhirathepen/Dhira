@@ -210,7 +210,9 @@ function check(name, condition, detail = '') {
   });
   check('Book updates', r.status === 200 && r.data.book.progress_percent === 63 && r.data.book.status === 'editing');
 
-  // 19. Author profile
+  // 19. Author profile (restore the real profile after these writes)
+  r = await request('GET', '/api/admin/author');
+  const savedAuthor = r.data.author;
   r = await request('PUT', '/api/admin/author', {
     name: 'Mohith', pen_name: 'Dhira', tagline: 'Writer, observer.',
     introduction: 'Introduction line one.\n\nLine two.', biography: 'A longer biography.',
@@ -228,6 +230,20 @@ function check(name, condition, detail = '') {
     name: 'Mohith', social_links: { website: 'javascript:alert(1)' },
   });
   check('javascript: social link rejected', r.status === 400, `status ${r.status}`);
+
+  await request('PUT', '/api/admin/author', {
+    name: savedAuthor.name,
+    pen_name: savedAuthor.pen_name,
+    tagline: savedAuthor.tagline,
+    introduction: savedAuthor.introduction,
+    biography: savedAuthor.biography,
+    writing_interests: savedAuthor.writing_interests,
+    personal_description: savedAuthor.personal_description,
+    profile_image_id: savedAuthor.profile_image ? savedAuthor.profile_image.id : null,
+    public_email: savedAuthor.public_email,
+    location: savedAuthor.location,
+    social_links: savedAuthor.social_links || {},
+  });
 
   // 20. Contact message
   r = await request('POST', '/api/contact', {

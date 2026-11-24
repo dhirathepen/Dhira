@@ -18,7 +18,7 @@ A personal writing website with a built-in CMS admin panel.
 
 - **Node.js** 20+ (tested on 26), **Express** 4, **Knex** 3, **SQLite 3** via `sqlite3`
 - CommonJS, one Express app serves frontend static files + API (same-origin cookies/CSRF)
-- Frontend: `intro.html` (entry animation), `index.html` (home), `writing.html`, `wits.html` (single unified writing page), `post.html`, `book.html`, `about.html`, `contact.html`, `404.html`, `admin.html`
+- Frontend: `index.html` (home + book-opening intro), `writing.html`, `wits.html` (single unified writing page), `post.html`, `book.html`, `about.html`, `contact.html`, `404.html`, `admin.html`
 - `/` serves the intro animation once per browser session, then forwards to `index.html`; refreshing the home page never replays it. `personal.html` and `thoughts.html` redirect to `wits.html`.
 - Backend routes: `/api/*` (public + admin); auth, posts, categories, tags, books, author, contact, images
 - Migrations run automatically on boot; env via `.env`; backup via `npm run db:backup`
@@ -96,7 +96,37 @@ You can also just copy the database file while the server is stopped; a plain fi
 
 ## Deploying
 
-Because SQLite is a file, the host must give the app a **persistent disk**. Without one, all content is lost whenever the container restarts or redeploys.
+Two setups are supported:
+
+- **Vercel + Supabase Postgres** (recommended here) — set `DATABASE_URL` and the app uses Postgres instead of the local SQLite file.
+- **SQLite on a host with a persistent disk** — see Render / VPS below. Without a disk, SQLite content is lost on redeploy.
+
+### Vercel + Supabase
+
+1. Create a Supabase project. In **Project Settings → Database → Connection string**, choose the **Transaction pooler** URI (port `6543`) and copy it. It looks like:
+   `postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres`
+2. Push this repo to GitHub and import it into Vercel. Framework preset: **Other**. `vercel.json` bundles `frontend/**` into the serverless function and routes every request through `api/index.js`.
+3. In Vercel → Settings → Environment Variables, add:
+
+   ```text
+   DATABASE_URL=<supabase transaction pooler URL>
+   DATABASE_SSL=true
+   NODE_ENV=production
+   RUN_MIGRATIONS=true
+   IP_HASH_SECRET=<a long random string>
+   SITE_URL=https://<your-project>.vercel.app
+   TRUST_PROXY=1
+   COOKIE_SECURE=true
+   ADMIN_INITIAL_USERNAME=<first admin username>
+   ADMIN_INITIAL_PASSWORD=<first admin password, at least 10 chars>
+   ```
+
+   Remove `ADMIN_INITIAL_*` after the first successful deploy; they are only used when no admin exists yet. Alternative: with `DATABASE_URL` set locally, run `npm run admin:create -- --username <name> --reset-password` from `backend/`.
+4. Deploy with `npx vercel login`, then `npx vercel` (link the project), then `npx vercel --prod`.
+
+Migrations, default categories, book info and the author profile are created automatically on the first request. Uploaded images are stored as database BLOBs, so no persistent Vercel filesystem is needed.
+
+Your existing SQLite content does **not** copy to Supabase automatically — re-add posts/books through `/admin`, or write a one-off export/import script.
 
 ### Render
 
@@ -141,16 +171,17 @@ The single Express app serves all HTML pages from `frontend/` and handles API re
 
 ## Image storage
 
-- Images uploaded via the admin are stored as BLOBs in the SQLite `images` table
-- Persistent across restarts — no external creds or third-party services needed
+- Images uploaded via the admin are stored as BLOBs in the `images` table (SQLite locally, `bytea` in Supabase/Postgres)
+- Persistent across restarts — no file volume needed, even on Vercel
 - Validation: PNG/JPEG/WebP/GIF only (SVG rejected); 8 MB max; magic-byte check
 - Served via `GET /api/images/:id` with ETag and `Cache-Control: immutable`
 - If an upload fails validation, the server returns a 400 with details
 
 ## Notes
 
-- All timestamps written to SQLite are stored as `YYYY-MM-DD HH:MM:SS` text so comparisons with `CURRENT_TIMESTAMP` work correctly (`backend/lib/dates.js`).
-- The app uses a single SQLite connection with `PRAGMA foreign_keys = ON` and WAL journaling for safe local writes.
+- Local SQLite stores timestamps as `YYYY-MM-DD HH:MM:SS` text; Supabase uses native `timestamp` columns. Shared query helpers live in `backend/lib/dates.js`.
+- SQLite uses one connection with `PRAGMA foreign_keys = ON` and WAL journaling. Postgres uses a small SSL-enabled pool that is safe across serverless instances.
+- `DATABASE_URL` chooses the database: unset → local SQLite file; set → Supabase/Postgres. Schema, admin accounts and sessions behave the same either way.
 - Never commit your real `.env` file — only `.env.example` is tracked. `backend/data/` and `backups/` are already git-ignored so local data and backups stay out of version control.
 - Public pages only ever receive posts with `status: published`; drafts are only visible from the admin panel.
 - All client rendering uses `textContent` (never innerHTML for user data); paragraphs split on blank lines, `white-space: pre-wrap` preserves lines/indentation.

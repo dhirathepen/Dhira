@@ -7,6 +7,7 @@ const { parse } = require('../lib/validate');
 const { contactSchema } = require('../lib/schemas');
 const { escapeLike, parsePagination, paginationMeta } = require('../lib/text');
 const { hashIp } = require('../lib/ip');
+const { nowMinus } = require('../lib/dates');
 const { contactLimiter } = require('../middleware/rateLimit');
 const {
   serializePost,
@@ -289,7 +290,7 @@ router.post(
     // Durable rate limit (survives restarts and multiple app instances).
     const hourly = await db('messages')
       .where({ ip_hash: ipHash })
-      .where('created_at', '>', db.raw("datetime('now', '-1 hour')"))
+      .where('created_at', '>', nowMinus(db, 60))
       .count({ count: 'id' })
       .first();
 
@@ -301,7 +302,7 @@ router.post(
       .where({ ip_hash: ipHash })
       .whereRaw('lower(subject) = lower(?)', [data.subject])
       .whereRaw('message = ?', [data.message])
-      .where('created_at', '>', db.raw("datetime('now', '-10 minutes')"))
+      .where('created_at', '>', nowMinus(db, 10))
       .first('id');
 
     if (duplicate) {
