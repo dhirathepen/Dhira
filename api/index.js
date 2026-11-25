@@ -16,42 +16,48 @@ const { deleteExpiredSessions } = require('../backend/lib/session');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function isMigrationLocked(err) {
-  return Boolean(
-    err && (err.name === 'MigrationLocked' || /already locked/i.test(err.message || ''))
-  );
-}
+// Arbitrary constant used with Postgres advisory locks.
+const MIGRATION_LOCK_KEY = 726613;
 
 /**
- * Serverless cold starts can overlap, so two instances may try to migrate at
- * the same time. Knex only lets one hold the lock. When that happens we wait
- * and then check whether the other instance already finished the work; a lock
- * left behind by a killed instance is ignored once nothing is pending.
+ * Run migrations exactly once across all cold starts.
+ *
+ * Knex uses a row in `knex_migrations_lock` as its mutex, which stays set
+ * forever if the process is killed mid-migration (common on serverless). We
+ * therefore serialise on a Postgres *advisory* lock instead: it belongs to the
+ * database session, so Postgres releases it automatically when a function
+ * dies. Only while holding it do we clear any leftover knex flag and migrate.
  */
 async function migrate() {
-  for (let attempt = 0; ; attempt += 1) {
-    try {
-      await db.migrate.latest();
-      return;
-    } catch (err) {
-      if (!isMigrationLocked(err)) throw err;
+  if (!config.usePostgres) {
+    await db.migrate.latest();
+    return;
+  }
 
-      const [, pending] = await db.migrate.list();
-      if (!pending.length) return;
+  const client = db.client;
+  const conn = await client.acquireConnection();
 
-      // Keep this short: serverless functions have a hard time limit, and a
-      // stale lock is the far more common case than a long-running migration.
-      if (attempt >= 2) {
-        const locked = new Error(
-          'Database migrations are locked. Release the stale lock in the Supabase SQL editor: ' +
-            'update knex_migrations_lock set is_locked = 0;'
-        );
-        locked.name = 'MigrationLocked';
-        throw locked;
-      }
-
-      await sleep(500 * (attempt + 1));
+  try {
+    let locked = false;
+    for (let attempt = 0; attempt < 10 && !locked; attempt += 1) {
+      const result = await conn.query('select pg_try_advisory_lock($1) as locked', [MIGRATION_LOCK_KEY]);
+      locked = Boolean(result.rows[0].locked);
+      if (!locked) await sleep(500);
     }
+
+    // Another instance is migrating right now; let it finish.
+    if (!locked) return;
+
+    try {
+      // Safe to clear: we hold the advisory lock, so no other instance can be
+      // mid-migration. Ignored on a brand-new database where the table is absent.
+      await conn.query('update knex_migrations_lock set is_locked = 0').catch(() => {});
+      await db.migrate.latest();
+    } finally {
+      await conn.query('select pg_advisory_unlock($1)', [MIGRATION_LOCK_KEY]).catch(() => {});
+    }
+  } finally {
+    await client.releaseConnection(conn);
   }
 }
 
