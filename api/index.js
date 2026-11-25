@@ -53,6 +53,22 @@ async function migrate() {
 
 let ready;
 
+/**
+ * Turn a bootstrap failure into a short, non-secret code so the deployment can
+ * be diagnosed from the browser without digging through function logs.
+ */
+function failureCode(err) {
+  if (!err) return 'UNKNOWN';
+  const message = String(err.message || '');
+  if (err.name === 'MigrationLocked' || /already locked/i.test(message)) return 'MIGRATION_LOCKED';
+  if (/does not exist/i.test(message)) return 'SCHEMA_MISSING';
+  if (['ENOTFOUND', 'ETIMEDOUT', 'ECONNREFUSED', 'ECONNRESET'].includes(err.code)) return 'DB_UNREACHABLE';
+  if (err.code === '28P01' || /password authentication failed/i.test(message)) return 'DB_AUTH';
+  if (/self[- ]signed|certificate/i.test(message)) return 'DB_TLS';
+  if (err.code === '23505') return 'DUPLICATE_KEY';
+  return err.code ? String(err.code) : 'BOOTSTRAP_FAILED';
+}
+
 function bootstrap() {
   if (!ready) {
     ready = (async () => {
@@ -78,11 +94,13 @@ module.exports = async function handler(req, res) {
   try {
     await bootstrap();
   } catch (err) {
-    console.error('[bootstrap]', err);
+    const code = failureCode(err);
+    console.error('[bootstrap]', code, err);
     if (!res.headersSent) {
       res.statusCode = 503;
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'The site is temporarily unavailable.' }));
+      res.setHeader('Cache-Control', 'no-store');
+      res.end(JSON.stringify({ error: 'The site is temporarily unavailable.', code }));
       return;
     }
   }
