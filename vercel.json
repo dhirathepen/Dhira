@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --prefix backend --no-audit --no-fund",
-  "buildCommand": "echo 'No build step needed'",
   "functions": {
     "api/index.js": {
       "includeFiles": "frontend/**",
