@@ -1,11 +1,18 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm install --prefix backend --no-audit --no-fund",
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "frontend/**",
-      "maxDuration": 30
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["backend/**", "frontend/**"]
+      }
     }
-  },
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/index.js" }]
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.js"
+    }
+  ]
 }
