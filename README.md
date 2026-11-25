@@ -105,7 +105,7 @@ Two setups are supported:
 
 1. Create a Supabase project. In **Project Settings → Database → Connection string**, choose the **Transaction pooler** URI (port `6543`) and copy it. It looks like:
    `postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres`
-2. Push this repo to GitHub and import it into Vercel. Framework preset: **Other**. `vercel.json` bundles `frontend/**` into the serverless function and routes every request through `api/index.js`.
+2. Push this repo to GitHub and import it into Vercel. Framework preset: **Other**, root directory = repository root. `vercel.json` bundles `frontend/**` into the serverless function and routes every request through `api/index.js`. Runtime dependencies are declared in the **root** `package.json` so Vercel installs and bundles them with the function; `backend/package.json` remains for local development.
 3. In Vercel → Settings → Environment Variables, add:
 
    ```text
