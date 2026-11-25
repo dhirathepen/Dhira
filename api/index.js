@@ -39,14 +39,18 @@ async function migrate() {
       const [, pending] = await db.migrate.list();
       if (!pending.length) return;
 
-      if (attempt >= 5) {
-        throw new Error(
+      // Keep this short: serverless functions have a hard time limit, and a
+      // stale lock is the far more common case than a long-running migration.
+      if (attempt >= 2) {
+        const locked = new Error(
           'Database migrations are locked. Release the stale lock in the Supabase SQL editor: ' +
             'update knex_migrations_lock set is_locked = 0;'
         );
+        locked.name = 'MigrationLocked';
+        throw locked;
       }
 
-      await sleep(1000 * (attempt + 1));
+      await sleep(500 * (attempt + 1));
     }
   }
 }
@@ -60,7 +64,9 @@ let ready;
 function failureCode(err) {
   if (!err) return 'UNKNOWN';
   const message = String(err.message || '');
-  if (err.name === 'MigrationLocked' || /already locked/i.test(message)) return 'MIGRATION_LOCKED';
+  if (err.name === 'MigrationLocked' || /already locked|migrations are locked/i.test(message)) {
+    return 'MIGRATION_LOCKED';
+  }
   if (/does not exist/i.test(message)) return 'SCHEMA_MISSING';
   if (['ENOTFOUND', 'ETIMEDOUT', 'ECONNREFUSED', 'ECONNRESET'].includes(err.code)) return 'DB_UNREACHABLE';
   if (err.code === '28P01' || /password authentication failed/i.test(message)) return 'DB_AUTH';
