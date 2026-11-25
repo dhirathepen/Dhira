@@ -8,57 +8,90 @@
  * requests in the same instance.
  */
 
+const crypto = require('crypto');
 const db = require('../backend/db');
 const config = require('../backend/config');
 const app = require('../backend/app');
 const { ensureDefaults } = require('../backend/lib/bootstrap');
 const { deleteExpiredSessions } = require('../backend/lib/session');
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Arbitrary constant used with Postgres advisory locks.
-const MIGRATION_LOCK_KEY = 726613;
+function isMigrationLocked(err) {
+  return Boolean(
+    err && (err.name === 'MigrationLocked' || /already locked|migrations are locked/i.test(err.message || ''))
+  );
+}
 
 /**
- * Run migrations exactly once across all cold starts.
- *
- * Knex uses a row in `knex_migrations_lock` as its mutex, which stays set
- * forever if the process is killed mid-migration (common on serverless). We
- * therefore serialise on a Postgres *advisory* lock instead: it belongs to the
- * database session, so Postgres releases it automatically when a function
- * dies. Only while holding it do we clear any leftover knex flag and migrate.
+ * Automatic migrations are best-effort only. Supabase's transaction pooler
+ * (PgBouncer, port 6543) does not support session-level advisory locks, so
+ * concurrency is handled by the one-shot /api/migrate endpoint instead.
  */
 async function migrate() {
-  if (!config.usePostgres) {
+  try {
     await db.migrate.latest();
-    return;
+  } catch (err) {
+    if (!isMigrationLocked(err)) throw err;
+    const [, pending] = await db.migrate.list();
+    if (pending.length) throw err;
   }
+}
 
-  const client = db.client;
-  const conn = await client.acquireConnection();
+/** Constant-time comparison of the one-shot migration token. */
+function migrateTokenMatches(req) {
+  const expected = process.env.MIGRATE_TOKEN || config.ipHashSecret;
+  if (!expected) return false;
+  const provided = new URL(req.url, 'http://localhost').searchParams.get('token') || '';
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/**
+ * GET /api/migrate?token=...&unlock=1
+ *
+ * Runs migrations once from a single invocation, which is safe with a
+ * transaction pooler. `unlock=1` also clears a stale knex migration flag left
+ * behind by an interrupted cold start.
+ */
+async function handleMigrate(req, res) {
+  const url = new URL(req.url, 'http://localhost');
+  const result = { ok: false };
 
   try {
-    let locked = false;
-    for (let attempt = 0; attempt < 10 && !locked; attempt += 1) {
-      const result = await conn.query('select pg_try_advisory_lock($1) as locked', [MIGRATION_LOCK_KEY]);
-      locked = Boolean(result.rows[0].locked);
-      if (!locked) await sleep(500);
+    await db.raw('select 1');
+
+    if (url.searchParams.get('unlock') === '1') {
+      try {
+        await db.raw('update knex_migrations_lock set is_locked = 0');
+        result.unlocked = true;
+      } catch (err) {
+        result.unlocked = err.message;
+      }
     }
 
-    // Another instance is migrating right now; let it finish.
-    if (!locked) return;
+    const [batch, applied] = await db.migrate.latest();
+    result.ok = true;
+    result.batch = batch;
+    result.applied = applied;
+
+    const [, pending] = await db.migrate.list();
+    result.pending = pending;
 
     try {
-      // Safe to clear: we hold the advisory lock, so no other instance can be
-      // mid-migration. Ignored on a brand-new database where the table is absent.
-      await conn.query('update knex_migrations_lock set is_locked = 0').catch(() => {});
-      await db.migrate.latest();
-    } finally {
-      await conn.query('select pg_advisory_unlock($1)', [MIGRATION_LOCK_KEY]).catch(() => {});
+      await ensureDefaults();
+      result.seeded = true;
+    } catch (err) {
+      result.seedError = err.message;
     }
-  } finally {
-    await client.releaseConnection(conn);
+  } catch (err) {
+    result.error = err.message;
+    result.code = err.code || null;
   }
+
+  res.statusCode = result.ok ? 200 : 500;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify(result, null, 2));
 }
 
 let ready;
@@ -103,6 +136,18 @@ function bootstrap() {
 }
 
 module.exports = async function handler(req, res) {
+  const pathname = new URL(req.url, 'http://localhost').pathname;
+
+  if (pathname === '/api/migrate') {
+    if (!migrateTokenMatches(req)) {
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: 'Not found.' }));
+      return;
+    }
+    return handleMigrate(req, res);
+  }
+
   try {
     await bootstrap();
   } catch (err) {
