@@ -65,7 +65,7 @@ async function ensureDefaults() {
   }
 
   const author = await db('author_profile').where({ id: 1 }).first('id');
-  if (!author) await db('author_profile').insert(DEFAULT_AUTHOR);
+  if (!author) await db('author_profile').insert(DEFAULT_AUTHOR).onConflict('id').ignore();
 }
 
 module.exports = { ensureDefaults, DEFAULT_CATEGORIES };
