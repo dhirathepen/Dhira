@@ -1,9 +1,0 @@
-{
-  "name": "dhira-vercel",
-  "private": true,
-  "description": "Vercel entry point for the Dhira site; app dependencies live in backend/package.json",
-  "engines": {
-    "node": "22.x"
-  },
-  "scripts": {}
-}

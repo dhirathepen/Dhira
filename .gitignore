@@ -4,6 +4,7 @@ node_modules/
 # ── Environment — never commit real secrets
 .env
 backend/.env
+vercel.env
 *.env.local
 
 # ── Backups

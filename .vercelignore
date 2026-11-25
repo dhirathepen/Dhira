@@ -1,5 +1,6 @@
 backend/data/
 backend/.env
+vercel.env
 backups/
 backend/backups/
 **/node_modules/
